@@ -236,21 +236,25 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = 1.15;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0c1113);
 scene.fog = new THREE.Fog(0x0c1113, 5, 12);
 const camera = new THREE.PerspectiveCamera(50, 1, 0.02, 60);
-scene.add(new THREE.HemisphereLight(0x9fb8c8, 0x1a1410, 0.35));
-const lamp = new THREE.PointLight(0xffb877, 1.4, 6, 2);
+scene.add(new THREE.HemisphereLight(0x9fb8c8, 0x1a1410, 0.55));
+const lamp = new THREE.PointLight(0xffb877, 1.8, 7, 2);
 lamp.position.set(0.95, 1.35, -0.75); lamp.castShadow = true; lamp.shadow.mapSize.set(1024, 1024);
+// Without a bias, a point light's cube shadow map shadows every surface onto itself:
+// the wall and floor came out covered in concentric rings (shadow acne).
+lamp.shadow.bias = -0.002; lamp.shadow.normalBias = 0.03; lamp.shadow.radius = 3;
+lamp.shadow.camera.near = 0.05; lamp.shadow.camera.far = 7;
 scene.add(lamp);
 const glowLight = new THREE.SpotLight(0xbcd6ff, 1.6, 4, Math.PI / 3, 0.8, 1.6);
 glowLight.position.set(0, 1.16, -0.8); glowLight.target.position.set(0, 1.0, 0.4);
 scene.add(glowLight, glowLight.target);
-const fill = new THREE.DirectionalLight(0x8aa5ff, 0.35);
+const fill = new THREE.DirectionalLight(0x8aa5ff, 0.5);
 fill.position.set(-2, 3, 2);
 scene.add(fill);
 
@@ -502,7 +506,11 @@ let neck = null, neckBase = null;
 function dress(root) {
   root.traverse((o) => {
     if (!o.isMesh) return;
-    o.castShadow = true; o.receiveShadow = true;
+    // Only props cast shadows. The room's big surfaces (wall, floor) only receive them:
+    // casting as well is what drew the rings across them.
+    if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+    const big = o.geometry.boundingSphere.radius * Math.max(o.scale.x, o.scale.y, o.scale.z) > 1.2;
+    o.castShadow = !big; o.receiveShadow = true;
     const m = o.material; if (!m) return;
     if (m.name === "abdomen") {
       const cv = document.createElement("canvas"); cv.width = 16; cv.height = 256; const c = cv.getContext("2d");
