@@ -311,6 +311,88 @@
     border-top: 1px solid var(--of-line);
 }
 
+/* ---- "More information" --------------------------------------------------------
+   itch paints .game_info_panel_widget from the theme's BG2, and on this page that
+   came out light grey: green links and black text on grey, unreadable under the
+   scanlines. Paint it here, so it no longer depends on the picker.
+   Structure, read off the live page on 2026-09-14:
+     .more_information_toggle > a (the toggle) + .info_panel_wrapper
+       > .game_info_panel_widget > table > tr > td, td (abbr, a, span.icon) */
+#wrapper .more_information_toggle > a,
+#wrapper .toggle_info_btn {
+    font: 10px/1.6 var(--of-pixel);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+#wrapper .more_information_toggle > a::before,
+#wrapper .toggle_info_btn::before { content: "$ "; color: var(--of-dim); }
+
+#wrapper .info_panel_wrapper,
+#wrapper .game_info_panel_widget {
+    background: var(--of-void);
+    color: var(--of-text);
+    border-radius: 0;
+}
+#wrapper .game_info_panel_widget {
+    border: 1px solid var(--of-line);
+    padding: 6px 14px;
+}
+#wrapper .game_info_panel_widget td,
+#wrapper .game_info_panel_widget abbr,
+#wrapper .game_info_panel_widget .icon {
+    color: var(--of-text);
+    font-family: var(--of-mono);
+    font-size: 13px;
+    text-decoration: none;
+}
+#wrapper .game_info_panel_widget td:first-child {
+    color: var(--of-dim);
+    font: 9px/1.8 var(--of-pixel);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+/* ---- Community -------------------------------------------------------------------
+   The heading came out dark grey on the void. Headings outside the description get
+   the same gold as the description's, and the posts and the reply box go onto the
+   console palette. */
+#wrapper .game_comments_widget h2,
+#wrapper .view_game_page .left_col > div > h2 {
+    color: var(--of-gold);
+    font: 12px/1.7 var(--of-pixel);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+#wrapper .game_comments_widget h2::before { content: "## "; color: var(--of-dim); }
+
+#wrapper .game_comments_widget,
+#wrapper .community_post {
+    color: var(--of-text);
+    font-family: var(--of-mono);
+}
+#wrapper .community_post {
+    border-color: var(--of-line);
+}
+#wrapper .community_post .post_date,
+#wrapper .community_post .post_date a,
+#wrapper .community_post .vote_counts {
+    color: var(--of-dim);
+}
+#wrapper .game_comments_widget textarea,
+#wrapper .game_comments_widget input[type="text"] {
+    background: var(--of-void);
+    color: var(--of-text);
+    border: 1px solid var(--of-line);
+    border-radius: 0;
+    font-family: var(--of-mono);
+}
+#wrapper .game_comments_widget textarea:focus,
+#wrapper .game_comments_widget input[type="text"]:focus {
+    outline: 2px solid var(--of-gold);
+    outline-offset: 1px;
+}
+
 /* ---- quieter where it has to be ------------------------------------------------- */
 @media (max-width: 700px) {
     #wrapper::before { display: none; }
