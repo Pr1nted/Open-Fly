@@ -2,6 +2,7 @@
 import json
 import os
 import queue
+import re
 import subprocess
 import threading
 import time
@@ -19,7 +20,8 @@ def run_seat(binary, data_dir, seat, seed, player, *, label, turns=120,
     two runs of one seed would not be the same world.
     """
     os.makedirs(log_dir, exist_ok=True)
-    tag = f"{label}__{seat.replace(':', '_')}__{seed}"
+    # A seat can name its map by path ("/maps/x.odmap:SWE"): file-name-safe.
+    tag = re.sub(r"[^A-Za-z0-9_.-]+", "_", f"{label}__{seat}__{seed}")[-120:]
     fifo = f"/tmp/strategy_fly_{os.getpid()}_{tag}.fifo"
     if os.path.exists(fifo):
         os.unlink(fifo)

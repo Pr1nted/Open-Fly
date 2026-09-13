@@ -23,6 +23,9 @@ _MENU = re.compile(r"^\[AGENT\] (economy|politics|war|navy)\s+(.*)$")
 _ACTION = re.compile(r"([epwn]):(\d+) (.+?)(?=\s{2}[epwn]:\d|\s*$)")
 _BUDGET = re.compile(r"^\[AGENT\] budget e:(\d+) p:(\d+) w:(\d+) n:(\d+)")
 _BENCH = re.compile(r"^\[BENCH\] seat (\S+)\s+score (-?[\d.]+)")
+# Printed only when the server runs with OD_AGENT_OWNERS set (the live viewer).
+_OWNERS = re.compile(r"^\[AGENT\] owners (\S+)$")
+_COLORS = re.compile(r"^\[AGENT\] colors ?(.*)$")
 
 
 def new_state():
@@ -66,6 +69,19 @@ def parse_line(line, state):
     if m:
         state["bench_score"] = float(m[2])
         return "bench"
+    m = _OWNERS.match(line)
+    if m:
+        state["owners"] = m[1]
+        return None
+    m = _COLORS.match(line)
+    if m:
+        colors = {}
+        for tok in m[1].split():
+            parts = tok.split(":")
+            if len(parts) == 3:
+                colors[int(parts[0])] = {"hex": parts[1], "iso": parts[2]}
+        state["colors"] = colors
+        return None
     if line == "[AGENT] waiting":
         return "waiting"
     if line.startswith("[AGENT] did "):

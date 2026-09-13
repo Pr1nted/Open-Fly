@@ -1,0 +1,53 @@
+diff --git a/src/Game_AITrain.cpp b/src/Game_AITrain.cpp
+index b7dacd3..bc9e1d8 100644
+--- a/src/Game_AITrain.cpp
++++ b/src/Game_AITrain.cpp
+@@ -2634,6 +2635,48 @@ bool Game::runBenchAgent(const std::string& seatSpec, const std::string& pipePat
+                inc.armyExpenses, inc.navyExpenses, inc.industryUpkeep,
+                inc.researchCost, inc.minorityCosts);
+         printf("[AGENT] at war with: %s\n", warList.empty() ? "(nobody)" : warList.c_str());
++        // ── FOR A LIVE VIEWER: THE WHOLE MAP, EVERY TURN ──
++        //
++        // Who owns each province (indexed by province id, uint16 little-endian,
++        // base64) and each owner's colour, so a viewer can colour the map's own
++        // provinces.png the way the timelapse does. Off unless OD_AGENT_OWNERS
++        // is set: ~3 KB a turn that no other agent wants.
++        if (std::getenv("OD_AGENT_OWNERS")) {
++            static const char* B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
++            std::string raw;
++            raw.reserve(m_provinceCountryLookup.size() * 2);
++            std::vector<int> seen;
++            for (int owner : m_provinceCountryLookup) {
++                const int v = owner < 0 ? 0 : (owner > 65535 ? 65535 : owner);
++                raw.push_back((char)(v & 0xFF));
++                raw.push_back((char)((v >> 8) & 0xFF));
++                if (owner > 0) seen.push_back(owner);
++            }
++            std::string enc;
++            enc.reserve((raw.size() + 2) / 3 * 4);
++            for (size_t k = 0; k < raw.size(); k += 3) {
++                uint32_t n = (uint32_t)(uint8_t)raw[k] << 16;
++                if (k + 1 < raw.size()) n |= (uint32_t)(uint8_t)raw[k + 1] << 8;
++                if (k + 2 < raw.size()) n |= (uint32_t)(uint8_t)raw[k + 2];
++                enc.push_back(B64[(n >> 18) & 63]);
++                enc.push_back(B64[(n >> 12) & 63]);
++                enc.push_back(k + 1 < raw.size() ? B64[(n >> 6) & 63] : '=');
++                enc.push_back(k + 2 < raw.size() ? B64[n & 63] : '=');
++            }
++            printf("[AGENT] owners %s\n", enc.c_str());
++            std::sort(seen.begin(), seen.end());
++            seen.erase(std::unique(seen.begin(), seen.end()), seen.end());
++            std::string cols;
++            for (int ocid : seen) {
++                const Country* oc = m_countries.getCountry(ocid);
++                if (!oc) continue;
++                char cbuf[64];
++                snprintf(cbuf, sizeof(cbuf), "%s%d:%02x%02x%02x:%s", cols.empty() ? "" : " ", ocid,
++                         oc->color.r, oc->color.g, oc->color.b, oc->isoA3.c_str());
++                cols += cbuf;
++            }
++            printf("[AGENT] colors %s\n", cols.c_str());
++        }
+         for (int mod = 0; mod < 4; ++mod) {
+             std::vector<bool> legal;
+             m_ai->agentLegal(cid, mod, legal);

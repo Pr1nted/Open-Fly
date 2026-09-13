@@ -7,3 +7,8 @@ __pycache__/
 Completeness_*.csv
 *.fifo
 .ipynb_checkpoints/
+# Built, not written: regenerate with tools/export_web_brain.py and tools/build_web_agent.sh.
+/web/data/connectome.bin
+/web/data/brain.bin
+/web/agent/
+.venv/

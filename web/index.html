@@ -1,0 +1,710 @@
+<meta charset="utf-8">
+<title>Strategy Fly</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --room: #0C1113;
+    --glass: rgba(10, 16, 18, 0.8);
+    --glass-edge: rgba(237, 230, 214, 0.10);
+    --paper: #EDE6D6;
+    --muted: #8F9A97;
+    --amber: #F2B84B;
+    --teal: #6FB7AE;
+    --war: #E0624F;
+    --good: #7FC98A;
+    --display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+    --body: "Figtree", "Helvetica Neue", Arial, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--room); color: var(--paper); font: 14px/1.45 var(--body); overflow: hidden; }
+  #stage { position: fixed; inset: 0; display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; outline: none; }
+  #stage:active { cursor: grabbing; }
+  .glass { background: var(--glass); border: 1px solid var(--glass-edge); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  button, select { font: 500 12.5px/1 var(--body); color: var(--paper); background: var(--glass); border: 1px solid var(--glass-edge); border-radius: 8px; padding: 8px 10px; cursor: pointer; }
+  button:hover, select:hover { border-color: rgba(242, 184, 75, 0.55); }
+  button:focus-visible, select:focus-visible, #stage:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+  .ident { position: fixed; top: 18px; left: 20px; max-width: 400px; pointer-events: none; }
+  .ident h1 { margin: 0; font: 800 44px/0.9 var(--display); letter-spacing: 0.01em; text-transform: uppercase; display: flex; align-items: center; gap: 12px; }
+  .ident h1 span { color: var(--amber); }
+  .live { font: 600 11px/1 var(--mono); letter-spacing: 0.14em; color: #FBD9D3; background: rgba(224, 98, 79, 0.2); border: 1px solid rgba(224, 98, 79, 0.5); border-radius: 999px; padding: 5px 9px 5px 8px; display: inline-flex; gap: 6px; align-items: center; font-style: normal; }
+  .live i { width: 7px; height: 7px; border-radius: 50%; background: var(--war); display: inline-block; animation: beat 1.4s ease-in-out infinite; }
+  @keyframes beat { 50% { opacity: 0.25; } }
+  .ident p { margin: 8px 0 0; color: var(--muted); font-size: 13px; text-wrap: balance; }
+
+  .views { position: fixed; top: 18px; right: 20px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: 60vw; }
+  .views button { border-radius: 999px; padding: 8px 12px; }
+  .views button[aria-pressed="true"] { background: var(--amber); color: #1B1406; border-color: var(--amber); }
+
+  .setup { position: fixed; left: 20px; top: 120px; width: 250px; border-radius: 14px; padding: 14px; display: grid; gap: 10px; }
+  .setup h2 { margin: 0; }
+  .setup label { display: grid; gap: 5px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .setup select { width: 100%; text-transform: none; letter-spacing: 0; }
+  .setup .row { display: flex; gap: 6px; }
+  .setup .row > * { flex: 1; }
+  .setup .go { background: var(--amber); color: #1B1406; border-color: var(--amber); font-weight: 600; }
+  .setup .note { font-size: 12px; color: var(--muted); margin: 0; }
+  #importFile { display: none; }
+
+  .rail { position: fixed; top: 76px; right: 20px; width: 300px; max-height: calc(100vh - 170px); overflow-y: auto; border-radius: 14px; padding: 16px 16px 14px; display: grid; gap: 14px; }
+  .gamehead { display: grid; gap: 2px; }
+  .label { font: 600 11px/1 var(--body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .gamehead .who { font: 800 26px/1 var(--display); text-transform: uppercase; letter-spacing: 0.01em; }
+  .gamehead .turn { font: 400 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; margin: 0; }
+  .stats div { display: grid; gap: 2px; }
+  .stats dt { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .stats dd { margin: 0; font: 600 15px/1.2 var(--mono); font-variant-numeric: tabular-nums; }
+  .warline { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; min-height: 22px; }
+  .chip { font: 600 11px/1 var(--mono); padding: 5px 7px; border-radius: 6px; background: rgba(224, 98, 79, 0.16); color: #F3A396; border: 1px solid rgba(224, 98, 79, 0.35); }
+  .peace { color: var(--muted); font-size: 12.5px; }
+  h2 { margin: 0 0 6px; font: 600 11px/1 var(--body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--amber); }
+  .orders { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+  .orders li { display: grid; grid-template-columns: 74px 1fr; gap: 8px; font-size: 13px; }
+  .orders li span:first-child { color: var(--muted); font-size: 12px; }
+  .orders .none { color: var(--muted); display: block; grid-column: 1 / -1; }
+  .spikes { font: 600 22px/1 var(--mono); font-variant-numeric: tabular-nums; }
+  .spikes small { font: 400 12px var(--body); color: var(--muted); margin-left: 6px; }
+  .bars { display: grid; gap: 6px; }
+  .bar { display: grid; grid-template-columns: 96px 1fr 38px; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); }
+  .bar i { display: block; height: 6px; border-radius: 3px; background: rgba(237, 230, 214, 0.08); overflow: hidden; }
+  .bar i b { display: block; height: 100%; width: 0; background: var(--teal); border-radius: 3px; transition: width 160ms linear; }
+  .bar output { font: 400 11.5px var(--mono); text-align: right; color: var(--paper); font-variant-numeric: tabular-nums; }
+  .record { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .record li { display: grid; grid-template-columns: 34px 1fr auto; gap: 8px; align-items: baseline; font: 400 12px var(--mono); font-variant-numeric: tabular-nums; }
+  .record li .iso { color: var(--paper); font-weight: 600; }
+  .record li .how { color: var(--muted); font-family: var(--body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .record li .up { color: var(--good); }
+  .record li .down { color: #F3A396; }
+  .record .empty { color: var(--muted); font-family: var(--body); display: block; grid-column: 1 / -1; }
+
+  .statusbar { position: fixed; left: 20px; right: 340px; bottom: 18px; border-radius: 14px; padding: 10px 14px; display: grid; grid-template-columns: minmax(200px, 320px) 1fr; gap: 16px; align-items: center; }
+  .statusbar .now { display: grid; gap: 3px; }
+  .statusbar .now strong { font: 600 13.5px/1.2 var(--body); }
+  .statusbar .now span { font: 400 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .spark { position: relative; height: 44px; }
+  .spark canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  .loading { position: fixed; inset: 0; display: grid; place-items: center; background: var(--room); z-index: 5; transition: opacity 400ms ease; }
+  .loading[data-done="true"] { opacity: 0; pointer-events: none; }
+  .loading div { display: grid; gap: 10px; justify-items: center; text-align: center; }
+  .loading strong { font: 800 28px/1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
+  .loading p { margin: 0; color: var(--muted); font: 400 12.5px var(--mono); max-width: 480px; }
+  .loading .err { color: #F3A396; }
+
+  @media (max-width: 900px) {
+    .ident p { display: none; }
+    .setup { top: auto; bottom: 90px; left: 12px; width: auto; right: 12px; grid-template-columns: 1fr 1fr; }
+    .setup h2, .setup .note { grid-column: 1 / -1; }
+    .rail { display: none; }
+    .statusbar { left: 12px; right: 12px; bottom: 12px; grid-template-columns: 1fr; }
+    .views { max-width: none; left: 12px; justify-content: flex-start; top: 70px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .loading, .bar i b { transition: none; } .live i { animation: none; } }
+</style>
+
+<canvas id="stage" tabindex="0" aria-label="3D scene: a simulated fruit fly brain at a desk playing Open Doctrines in this browser, with its brain beside it. Drag to look, W A S D to fly."></canvas>
+
+<header class="ident">
+  <h1>Strategy <span>Fly</span> <em class="live"><i></i>LIVE</em></h1>
+  <p>A simulated fruit fly brain &mdash; the FlyWire connectome, 138,639 neurons &mdash; playing Open Doctrines. Both run here, in your browser: every order comes from spikes computed on this machine.</p>
+</header>
+
+<section class="setup glass" aria-label="Game setup">
+  <h2>The next game</h2>
+  <label>Map
+    <select id="mapSelect"><option>Loading maps&hellip;</option></select>
+  </label>
+  <div class="row">
+    <button type="button" id="importBtn">Import .odmap</button>
+  </div>
+  <input type="file" id="importFile" accept=".odmap">
+  <label>Country
+    <select id="countrySelect"><option value="">Random country</option></select>
+  </label>
+  <label>Speed
+    <select id="speedSelect">
+      <option value="0">As fast as it thinks</option>
+      <option value="1200" selected>Watchable</option>
+      <option value="3000">Slow</option>
+    </select>
+  </label>
+  <button type="button" class="go" id="startBtn">Start this game</button>
+  <p class="note" id="setupNote">If the fly's country is wiped out, the same game starts again with a new seed.</p>
+</section>
+
+<nav class="views" aria-label="Camera views">
+  <button type="button" data-view="shoulder" aria-pressed="true">Over its shoulder</button>
+  <button type="button" data-view="screen" aria-pressed="false">The screen</button>
+  <button type="button" data-view="brain" aria-pressed="false">The brain</button>
+  <button type="button" data-view="world" aria-pressed="false">The world</button>
+  <button type="button" data-view="wide" aria-pressed="false">Wide</button>
+</nav>
+
+<aside class="rail glass" aria-live="polite">
+  <div class="gamehead">
+    <span class="label" id="gameLabel">Getting ready</span>
+    <span class="who" id="gameWho">&mdash;</span>
+    <span class="turn" id="gameTurn">&nbsp;</span>
+  </div>
+  <dl class="stats">
+    <div><dt>Land</dt><dd id="land">&mdash;</dd></div>
+    <div><dt>Army</dt><dd id="army">&mdash;</dd></div>
+    <div><dt>Treasury</dt><dd id="treasury">&mdash;</dd></div>
+    <div><dt>At war with</dt><dd><span class="warline" id="war"><span class="peace">nobody</span></span></dd></div>
+  </dl>
+  <section>
+    <h2>Its orders this turn</h2>
+    <ul class="orders" id="orders"><li><span class="none">Not yet</span></li></ul>
+  </section>
+  <section>
+    <h2>Its brain this turn</h2>
+    <div class="spikes"><span id="spikes">0</span><small>descending-neuron spikes</small></div>
+    <div class="bars">
+      <label class="bar">Sugar &middot; treasury<i><b id="bSugar"></b></i><output id="oSugar">0</output></label>
+      <label class="bar">Bitter &middot; losses<i><b id="bBitter"></b></i><output id="oBitter">0</output></label>
+      <label class="bar">Water &middot; land<i><b id="bWater"></b></i><output id="oWater">0</output></label>
+      <label class="bar">Hearing &middot; war<i><b id="bJon"></b></i><output id="oJon">0</output></label>
+    </div>
+  </section>
+  <section>
+    <h2>Its record</h2>
+    <ul class="record" id="record"><li><span class="empty">No finished games yet</span></li></ul>
+  </section>
+</aside>
+
+<div class="statusbar glass">
+  <div class="now"><strong id="nowTitle">Waking the fly&hellip;</strong><span id="nowDetail">&nbsp;</span></div>
+  <div class="spark"><canvas id="spark" aria-label="Land held this game, turn by turn"></canvas></div>
+</div>
+
+<div class="loading" id="loading">
+  <div>
+    <strong>Waking the fly</strong>
+    <p id="loadText">Loading the room&hellip;</p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+<script type="module">
+import { Encoder, choose, turnSeed, BRAIN_SEED, WINDOW_MS } from "./decide.js";
+
+const $ = (id) => document.getElementById(id);
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const fmt = new Intl.NumberFormat("en-US");
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const loadText = $("loadText");
+const TURNS = 120;
+
+// ---------------------------------------------------------------- workers
+function rpcWorker(url) {
+  const w = new Worker(url, { type: "module" });
+  let next = 1;
+  const waiting = new Map();
+  const listeners = [];
+  w.onmessage = (e) => {
+    const m = e.data;
+    if (m.id && waiting.has(m.id)) { const { res, rej } = waiting.get(m.id); waiting.delete(m.id); m.error ? rej(new Error(m.error)) : res(m); }
+    else listeners.forEach((f) => f(m));
+  };
+  w.onerror = (e) => listeners.forEach((f) => f({ type: "error", message: e.message }));
+  return {
+    call: (type, payload = {}, transfer = []) => new Promise((res, rej) => { const id = next++; waiting.set(id, { res, rej }); w.postMessage({ type, id, ...payload }, transfer); }),
+    on: (f) => listeners.push(f),
+    post: (m) => w.postMessage(m),
+  };
+}
+const game = rpcWorker("./game-worker.js");
+const brainW = rpcWorker("./brain-worker.js");
+
+// ---------------------------------------------------------------- the room
+const canvas = $("stage");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0c1113);
+scene.fog = new THREE.Fog(0x0c1113, 5, 12);
+const camera = new THREE.PerspectiveCamera(50, 1, 0.02, 60);
+scene.add(new THREE.HemisphereLight(0x9fb8c8, 0x1a1410, 0.35));
+const lamp = new THREE.PointLight(0xffb877, 1.4, 6, 2);
+lamp.position.set(0.95, 1.35, -0.75); lamp.castShadow = true; lamp.shadow.mapSize.set(1024, 1024);
+scene.add(lamp);
+const glowLight = new THREE.SpotLight(0xbcd6ff, 1.6, 4, Math.PI / 3, 0.8, 1.6);
+glowLight.position.set(0, 1.16, -0.8); glowLight.target.position.set(0, 1.0, 0.4);
+scene.add(glowLight, glowLight.target);
+const fill = new THREE.DirectionalLight(0x8aa5ff, 0.35);
+fill.position.set(-2, 3, 2);
+scene.add(fill);
+
+const VIEWS = {
+  shoulder: { pos: [1.15, 1.85, 1.35], look: [-0.35, 1.1, -0.5] },
+  screen: { pos: [0.3, 1.38, -0.36], look: [0.0, 1.15, -0.88] },
+  brain: { pos: [-0.45, 1.5, 0.55], look: [-1.15, 1.3, -0.35] },
+  world: { pos: [-0.35, 1.8, 1.45], look: [-0.45, 1.95, -1.66] },
+  wide: { pos: [2.1, 2.3, 2.4], look: [-0.4, 1.0, -0.4] },
+};
+let yaw = 0, pitch = 0, tween = null;
+const lookFrom = (pos, look) => { const d = new THREE.Vector3().subVectors(new THREE.Vector3(...look), new THREE.Vector3(...pos)).normalize(); return { yaw: Math.atan2(-d.x, -d.z), pitch: Math.asin(d.y) }; };
+const applyCamera = () => camera.rotation.set(pitch, yaw, 0, "YXZ");
+const pressView = (name) => document.querySelectorAll(".views button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === name)));
+function goTo(name, instant) {
+  const v = VIEWS[name], to = lookFrom(v.pos, v.look);
+  pressView(name);
+  if (instant || reduceMotion) { camera.position.set(...v.pos); yaw = to.yaw; pitch = to.pitch; applyCamera(); tween = null; return; }
+  let dy = to.yaw - yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+  tween = { t: 0, p0: camera.position.clone(), p1: new THREE.Vector3(...v.pos), y0: yaw, y1: yaw + dy, q0: pitch, q1: to.pitch };
+}
+document.querySelectorAll(".views button").forEach((b) => b.addEventListener("click", () => goTo(b.dataset.view)));
+goTo("shoulder", true);
+const keys = new Set();
+addEventListener("keydown", (e) => { if (!e.target.closest("select, input")) keys.add(e.code); });
+addEventListener("keyup", (e) => keys.delete(e.code));
+addEventListener("blur", () => keys.clear());
+const pointers = new Map();
+let pinch = 0;
+canvas.addEventListener("pointerdown", (e) => { canvas.setPointerCapture(e.pointerId); pointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); canvas.focus(); });
+canvas.addEventListener("pointermove", (e) => {
+  const p = pointers.get(e.pointerId); if (!p) return;
+  if (pointers.size === 1) { yaw -= (e.clientX - p.x) * 0.004; pitch = Math.max(-1.45, Math.min(1.45, pitch - (e.clientY - p.y) * 0.004)); tween = null; pressView(""); applyCamera(); }
+  else if (pointers.size === 2) { const [a, b] = [...pointers.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); if (pinch) moveForward((d - pinch) * 0.004); pinch = d; }
+  p.x = e.clientX; p.y = e.clientY;
+});
+const endPointer = (e) => { pointers.delete(e.pointerId); if (pointers.size < 2) pinch = 0; };
+canvas.addEventListener("pointerup", endPointer);
+canvas.addEventListener("pointercancel", endPointer);
+canvas.addEventListener("wheel", (e) => { e.preventDefault(); moveForward(-e.deltaY * 0.0015); }, { passive: false });
+function moveForward(a) { camera.position.addScaledVector(new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation), a); tween = null; pressView(""); }
+
+// ---------------------------------------------------------------- maps: province rasters from the .odmap itself
+const SW = 1920, SH = 1080, MAPW = 1600, MAPH = 800, WW = 2048, WH = 1024;
+const screenCanvas = document.createElement("canvas"); screenCanvas.width = SW; screenCanvas.height = SH;
+const sc = screenCanvas.getContext("2d");
+const screenTex = new THREE.CanvasTexture(screenCanvas); screenTex.encoding = THREE.sRGBEncoding; screenTex.flipY = false; screenTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+const mapCanvas = document.createElement("canvas"); mapCanvas.width = MAPW; mapCanvas.height = MAPH;
+const mc = mapCanvas.getContext("2d"); const mapImage = mc.createImageData(MAPW, MAPH);
+const worldCanvas = document.createElement("canvas"); worldCanvas.width = WW; worldCanvas.height = WH;
+const wc = worldCanvas.getContext("2d"); const worldImage = wc.createImageData(WW, WH);
+const worldTex = new THREE.CanvasTexture(worldCanvas); worldTex.encoding = THREE.sRGBEncoding; worldTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+const mapCache = new Map();
+async function loadMap(path) {
+  if (mapCache.has(path)) return mapCache.get(path);
+  const { bytes } = await game.call("readMap", { path });
+  const files = fflate.unzipSync(bytes, { filter: (f) => ["countries.json", "provinces.json", "provinces.png"].includes(f.name) });
+  const dec = new TextDecoder();
+  const countries = JSON.parse(dec.decode(files["countries.json"]));
+  const provinces = JSON.parse(dec.decode(files["provinces.json"]));
+  const pngBlob = new Blob([files["provinces.png"]], { type: "image/png" });
+  const full = await createImageBitmap(pngBlob, { colorSpaceConversion: "none", premultiplyAlpha: "none" });
+  const srcW = full.width, srcH = full.height;
+  full.close();
+  let maxPid = 0; const count = new Map();
+  for (const [k, p] of Object.entries(provinces)) { maxPid = Math.max(maxPid, +k); count.set(p.country_id, (count.get(p.country_id) || 0) + 1); }
+  const world = await rasterIds(pngBlob, 0, 0, srcW, srcH, WW, WH, maxPid);
+  const seats = Object.values(countries).filter((c) => c.id < 60000 && count.get(c.id)).map((c) => ({ id: c.id, iso: c.iso_a3, name: c.name, provinces: count.get(c.id) }))
+    .sort((a, b) => b.provinces - a.provinces);
+  const info = { path, pngBlob, srcW, srcH, maxPid, countries, provinces, world, seats };
+  mapCache.set(path, info);
+  return info;
+}
+async function rasterIds(blob, sx, sy, sw, sh, w, h, maxPid) {
+  const bmp = await createImageBitmap(blob, Math.round(sx), Math.round(sy), Math.round(sw), Math.round(sh),
+    { resizeWidth: w, resizeHeight: h, resizeQuality: "pixelated", colorSpaceConversion: "none", premultiplyAlpha: "none" });
+  const c = new OffscreenCanvas(w, h); const x = c.getContext("2d", { willReadFrequently: true });
+  x.drawImage(bmp, 0, 0); bmp.close();
+  const px = x.getImageData(0, 0, w, h).data;
+  const ids = new Uint16Array(w * h);
+  for (let i = 0, o = 0; i < ids.length; i++, o += 4) { const id = (px[o] << 16) | (px[o + 1] << 8) | px[o + 2]; ids[i] = id <= maxPid ? id : 0; }
+  return ids;
+}
+async function seatCrop(map, cid) {
+  // The seat's own provinces, from the world raster, then the source PNG cut there at full resolution.
+  let x0 = Infinity, y0 = Infinity, x1 = -1, y1 = -1;
+  const own = new Uint8Array(map.maxPid + 1);
+  for (const [k, p] of Object.entries(map.provinces)) if (p.country_id === cid) own[+k] = 1;
+  for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) { if (own[map.world[y * WW + x]]) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } }
+  const sxs = map.srcW / WW, sys = map.srcH / WH;
+  let cx, cy, w;
+  if (x1 < 0) { cx = map.srcW / 2; cy = map.srcH / 2; w = map.srcW; }
+  else { cx = ((x0 + x1) / 2) * sxs; cy = ((y0 + y1) / 2) * sys; w = Math.max((x1 - x0) * sxs * 1.9, (y1 - y0) * sys * 1.9 * 2, map.srcW * 0.14); }
+  w = Math.min(w, map.srcW, map.srcH * 2); const h = w / 2;
+  const sx = Math.min(Math.max(cx - w / 2, 0), map.srcW - w), sy = Math.min(Math.max(cy - h / 2, 0), map.srcH - h);
+  return rasterIds(map.pngBlob, sx, sy, w, h, MAPW, MAPH, map.maxPid);
+}
+
+const hexRGB = (h) => [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+const hashRGB = (n) => { const h = (n * 2654435761) >>> 0; return [60 + (h & 127), 60 + ((h >> 8) & 127), 60 + ((h >> 16) & 127)]; };
+function b64bytes(s) { const raw = atob(s); const b = new Uint8Array(raw.length); for (let i = 0; i < raw.length; i++) b[i] = raw.charCodeAt(i); return b; }
+function paintInto(ids, W, H, image, pos, seat) {
+  const ob = b64bytes(pos.owners);
+  const owners = new Uint16Array(ob.buffer, 0, ob.length >> 1);
+  const colors = new Map(Object.entries(pos.colors || {}).map(([cid, v]) => [+cid, hexRGB(v.hex)]));
+  const px = image.data;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x, pid = ids[i], cid = pid < owners.length ? owners[pid] : 0;
+    let r = 10, g = 15, b = 40;
+    if (pid && cid) { const c = colors.get(cid) || hashRGB(cid); r = c[0]; g = c[1]; b = c[2]; }
+    const rp = x + 1 < W ? ids[i + 1] : pid, dp = y + 1 < H ? ids[i + W] : pid;
+    const cr = rp < owners.length ? owners[rp] : 0, cd = dp < owners.length ? owners[dp] : 0;
+    if (pid && (cr !== cid || cd !== cid)) { if (cid === seat || cr === seat || cd === seat) { r = 242; g = 184; b = 75; } else { r *= 0.45; g *= 0.45; b *= 0.45; } }
+    const o = i * 4; px[o] = r; px[o + 1] = g; px[o + 2] = b; px[o + 3] = 255;
+  }
+}
+
+// ---------------------------------------------------------------- the monitor
+const S = 1.2, s = (v) => v * S, font = (w, size, fam) => `${w} ${s(size)}px ${fam}`;
+const G = { meta: null, turns: [], over: null, crop: null, map: null };
+function drawScreen() {
+  const t = G.turns[G.turns.length - 1], m = G.meta;
+  sc.fillStyle = "#0c0e14"; sc.fillRect(0, 0, SW, SH);
+  sc.fillStyle = "#161a24"; sc.fillRect(0, 0, SW, s(56));
+  sc.textBaseline = "top";
+  sc.fillStyle = "#F2B84B"; sc.font = font(600, 24, "Figtree, sans-serif"); sc.fillText("OPEN DOCTRINES", s(20), s(14));
+  sc.fillStyle = "#E6E8EE"; sc.font = font(500, 20, "Figtree, sans-serif");
+  sc.fillText(m ? `${m.mapName}  ·  ${m.name}  ·  Turn ${t ? t.pos.turn + 1 : 1} / ${TURNS}` : "Waiting for a game", s(290), s(16));
+  sc.fillStyle = "#8C92A0"; sc.textAlign = "right"; sc.fillText(m ? `Game ${m.game}  ·  seed ${m.seed}` : "", SW - s(20), s(16)); sc.textAlign = "left";
+  sc.imageSmoothingEnabled = true; sc.imageSmoothingQuality = "high";
+  sc.drawImage(mapCanvas, 0, s(56), s(1100), s(550));
+  sc.strokeStyle = "#323846"; sc.lineWidth = s(2); sc.strokeRect(0, s(56), s(1100), s(550));
+  if (t) {
+    const p = t.pos, war = p.war.length ? p.war.join(" ") : "nobody";
+    [["Land", `${p.share.toFixed(2)}% of the world`], ["Army", fmt.format(p.army)], ["Treasury", fmt.format(Math.round(p.treasury))], ["At war with", war.slice(0, 34)]].forEach(([k, v], i) => {
+      sc.fillStyle = "#8C92A0"; sc.font = font(500, 16, "Figtree, sans-serif"); sc.fillText(k, s(24 + i * 270), s(622));
+      sc.fillStyle = k === "At war with" && p.war.length ? "#DC463C" : "#E6E8EE"; sc.font = font(600, 20, "JetBrains Mono, monospace"); sc.fillText(v, s(24 + i * 270), s(646));
+    });
+    sc.fillStyle = "#161a24"; sc.fillRect(s(24), s(700), s(1052), s(180));
+    sc.fillStyle = "#8C92A0"; sc.font = font(500, 16, "Figtree, sans-serif"); sc.fillText("Land held, % of the world", s(36), s(708));
+    const vals = G.turns.map((q) => q.pos.share), hi = Math.max(...vals) * 1.15, lo = Math.min(...vals) * 0.85;
+    sc.strokeStyle = "#F2B84B"; sc.lineWidth = s(3); sc.beginPath();
+    vals.forEach((v, i) => { const x = s(34) + s(1032) * (i / (TURNS - 1)), y = s(870) - s(130) * ((v - lo) / ((hi - lo) || 1)); i ? sc.lineTo(x, y) : sc.moveTo(x, y); }); sc.stroke();
+    sc.fillStyle = "#161a24"; sc.fillRect(s(1100), s(56), SW - s(1100), SH);
+    sc.fillStyle = "#F2B84B"; sc.font = font(600, 24, "Figtree, sans-serif"); sc.fillText("THE FLY'S ORDERS", s(1124), s(76));
+    let y = s(116);
+    if (!t.orders.length) { sc.fillStyle = "#8C92A0"; sc.font = font(500, 20, "Figtree, sans-serif"); sc.fillText("(holds)", s(1124), y); }
+    t.orders.slice(0, 13).forEach(([mod, name]) => { sc.fillStyle = "#8C92A0"; sc.font = font(500, 16, "Figtree, sans-serif"); sc.fillText(mod, s(1124), y + s(2)); sc.fillStyle = "#E6E8EE"; sc.font = font(500, 20, "Figtree, sans-serif"); sc.fillText(name, s(1224), y); y += s(30); });
+    sc.fillStyle = "#F2B84B"; sc.font = font(600, 24, "Figtree, sans-serif"); sc.fillText("BRAIN THIS TURN", s(1124), s(560));
+    sc.fillStyle = "#E6E8EE"; sc.font = font(500, 20, "Figtree, sans-serif"); sc.fillText(`${fmt.format(t.dn)} descending-neuron spikes`, s(1124), s(600));
+    sc.fillStyle = "#282e3c"; sc.fillRect(s(1124), s(632), s(452), s(16)); sc.fillStyle = "#F2B84B"; sc.fillRect(s(1124), s(632), s(452) * Math.min(1, t.dn / 750), s(16));
+    [["sugar", "sugar (treasury)"], ["bitter", "bitter (losses)"], ["water", "water (land)"], ["jon", "hearing (war)"]].forEach(([k, label], i) => {
+      const yy = s(672 + i * 42), v = t.rates[k] || 0;
+      sc.fillStyle = "#8C92A0"; sc.font = font(500, 16, "Figtree, sans-serif"); sc.fillText(label, s(1124), yy);
+      sc.fillStyle = "#282e3c"; sc.fillRect(s(1124), yy + s(20), s(452), s(10)); sc.fillStyle = "#6EAAE6"; sc.fillRect(s(1124), yy + s(20), s(452) * Math.min(1, v / 200), s(10));
+    });
+    sc.fillStyle = "#8C92A0"; sc.font = font(500, 16, "Figtree, sans-serif"); sc.fillText(`${fmt.format(t.fired)} neurons fired  ·  thought for ${(t.brainMs / 1000).toFixed(2)} s`, s(1124), SH - s(40));
+  }
+  if (G.over) {
+    sc.fillStyle = "rgba(8, 10, 14, 0.82)"; sc.fillRect(s(180), s(200), s(740), s(250)); sc.strokeStyle = "#F2B84B"; sc.lineWidth = s(2); sc.strokeRect(s(180), s(200), s(740), s(250));
+    sc.textAlign = "center"; sc.fillStyle = "#F2B84B"; sc.font = font(700, 44, "'Big Shoulders Display', sans-serif"); sc.fillText(G.over.title, s(550), s(232));
+    sc.fillStyle = "#E6E8EE"; sc.font = font(500, 24, "Figtree, sans-serif"); sc.fillText(G.over.line, s(550), s(310));
+    sc.fillStyle = "#8C92A0"; sc.font = font(500, 20, "Figtree, sans-serif"); sc.fillText(G.over.next, s(550), s(370)); sc.textAlign = "left";
+  }
+  screenTex.needsUpdate = true;
+}
+
+// ---------------------------------------------------------------- rail, record, spark
+const bars = [["sugar", "bSugar", "oSugar"], ["bitter", "bBitter", "oBitter"], ["water", "bWater", "oWater"], ["jon", "bJon", "oJon"]];
+const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function showTurn() {
+  const t = G.turns[G.turns.length - 1], m = G.meta;
+  $("gameLabel").textContent = m ? `Game ${m.game} · ${m.mapName} · seed ${m.seed}` : "Getting ready";
+  $("gameWho").textContent = m ? m.name : "—";
+  $("gameTurn").textContent = t ? `Turn ${t.pos.turn + 1} of ${TURNS}` : "Starting…";
+  if (!t) return;
+  const p = t.pos;
+  $("land").textContent = `${p.share.toFixed(2)}%`; $("army").textContent = fmt.format(p.army); $("treasury").textContent = fmt.format(Math.round(p.treasury));
+  $("war").innerHTML = p.war.length ? p.war.map((w) => `<span class="chip">${esc(w)}</span>`).join("") : '<span class="peace">nobody</span>';
+  $("orders").innerHTML = t.orders.length ? t.orders.map(([a, b]) => `<li><span>${esc(a)}</span><span>${esc(b)}</span></li>`).join("") : '<li><span class="none">Holds everything</span></li>';
+  $("spikes").textContent = fmt.format(t.dn);
+  bars.forEach(([k, b, o]) => { const v = t.rates[k] || 0; $(b).style.width = `${Math.min(100, v / 2)}%`; $(o).textContent = Math.round(v); });
+}
+const results = [];
+function showRecord() {
+  const list = $("record");
+  if (!results.length) { list.innerHTML = '<li><span class="empty">No finished games yet</span></li>'; return; }
+  list.innerHTML = results.slice(-8).reverse().map((r) => {
+    if (r.wipedOut) return `<li><span class="iso">${esc(r.iso)}</span><span class="how">wiped out, turn ${r.turn + 1}</span><span class="down">&minus;${r.start.toFixed(2)}</span></li>`;
+    const d = r.end - r.start;
+    return `<li><span class="iso">${esc(r.iso)}</span><span class="how">${r.start.toFixed(2)}% → ${r.end.toFixed(2)}%</span><span class="${d >= 0 ? "up" : "down"}">${d >= 0 ? "+" : ""}${d.toFixed(2)}</span></li>`;
+  }).join("");
+}
+const spark = $("spark");
+function drawSpark() {
+  const r = spark.getBoundingClientRect(), dpr = Math.min(devicePixelRatio, 2);
+  spark.width = Math.round(r.width * dpr); spark.height = Math.round(r.height * dpr);
+  const c = spark.getContext("2d"); c.scale(dpr, dpr);
+  const w = r.width, h = r.height, vals = G.turns.map((t) => t.pos.share);
+  c.strokeStyle = "rgba(237, 230, 214, 0.08)"; c.lineWidth = 1; c.beginPath(); c.moveTo(0, h - 6); c.lineTo(w, h - 6); c.stroke();
+  if (!vals.length) return;
+  G.turns.forEach((t, i) => { if (t.pos.war.length) { c.fillStyle = "rgba(224, 98, 79, 0.16)"; c.fillRect((w * i) / TURNS, 0, w / TURNS + 0.5, h); } });
+  const hi = Math.max(...vals) * 1.1, lo = Math.min(...vals) * 0.9;
+  const x = (i) => (w - 8) * (i / (TURNS - 1)) + 4, y = (v) => h - 8 - (h - 16) * ((v - lo) / ((hi - lo) || 1));
+  c.strokeStyle = "#F2B84B"; c.lineWidth = 2; c.lineJoin = "round"; c.beginPath(); vals.forEach((v, i) => (i ? c.lineTo(x(i), y(v)) : c.moveTo(x(i), y(v)))); c.stroke();
+  c.fillStyle = "#F2B84B"; c.beginPath(); c.arc(x(vals.length - 1), y(vals[vals.length - 1]), 3.5, 0, Math.PI * 2); c.fill();
+}
+const setNow = (title, detail) => { $("nowTitle").textContent = title; $("nowDetail").textContent = detail || " "; };
+
+// ---------------------------------------------------------------- the brain in the room
+let brainView = null, activity = null, actAttr = null, dnIndex = null;
+function buildBrainView(buf) {
+  const dv = new DataView(buf), n = dv.getUint32(8, true);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(buf, 16, n * 3), 3));
+  const cls = new Uint8Array(buf, 16 + n * 12, n), kind = new Float32Array(n); for (let i = 0; i < n; i++) kind[i] = cls[i];
+  geo.setAttribute("aKind", new THREE.BufferAttribute(kind, 1));
+  activity = new Float32Array(n); actAttr = new THREE.BufferAttribute(activity, 1); actAttr.setUsage(THREE.DynamicDrawUsage); geo.setAttribute("aAct", actAttr);
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: { uScale: { value: 1 }, uPixel: { value: renderer.getPixelRatio() } },
+    vertexShader: `attribute float aKind; attribute float aAct; uniform float uScale; uniform float uPixel; varying vec3 vColor; varying float vAlpha;
+      void main() { vec4 mv = modelViewMatrix * vec4(position, 1.0); float hide = step(254.5, aKind);
+        vec3 base = vec3(0.30, 0.62, 0.58); float a = 0.11;
+        if (abs(aKind - 1.0) < 0.5) { base = vec3(0.30, 0.48, 0.58); a = 0.07; }
+        if (abs(aKind - 3.0) < 0.5) { base = vec3(0.50, 0.82, 0.68); a = 0.14; }
+        if (abs(aKind - 4.0) < 0.5) { base = vec3(0.95, 0.68, 0.25); a = 0.8; }
+        vColor = mix(base, vec3(1.0, 0.95, 0.80), clamp(aAct, 0.0, 1.0)); vAlpha = (a + aAct * 0.95) * (1.0 - hide);
+        float size = (aKind > 3.5 && aKind < 4.5 ? 2.6 : 1.6) + aAct * 5.0; gl_PointSize = size * uPixel * uScale / max(0.05, -mv.z); gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `varying vec3 vColor; varying float vAlpha; void main() { vec2 d = gl_PointCoord - 0.5; float r = dot(d, d); if (r > 0.25) discard; gl_FragColor = vec4(vColor, vAlpha * smoothstep(0.25, 0.0, r)); }`,
+  });
+  const points = new THREE.Points(geo, mat); points.frustumCulled = false;
+  const holder = new THREE.Group(); holder.position.set(-1.15, 1.3, -0.35); holder.add(points);
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.31, 0.025, 64), new THREE.MeshStandardMaterial({ color: 0x151c1f, roughness: 0.6, metalness: 0.3 }));
+  disc.position.set(-1.15, 1.02, -0.35); disc.receiveShadow = true;
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.004, 8, 96), new THREE.MeshBasicMaterial({ color: 0xf2b84b, transparent: true, opacity: 0.55 }));
+  ring.rotation.x = Math.PI / 2; ring.position.set(-1.15, 1.035, -0.35);
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 1.02, 16), new THREE.MeshStandardMaterial({ color: 0x0f1416, roughness: 0.5, metalness: 0.5 }));
+  stem.position.set(-1.15, 0.51, -0.35); stem.castShadow = true;
+  const haze = new THREE.PointLight(0x6fb7ae, 0.5, 1.6, 2); haze.position.set(-1.15, 1.3, -0.35);
+  scene.add(holder, disc, ring, stem, haze);
+  brainView = { holder, mat, haze };
+}
+
+// ---------------------------------------------------------------- the fly
+const legs = {}, taps = { "-1": [], "1": [] };
+let neck = null, neckBase = null;
+function dress(root) {
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    o.castShadow = true; o.receiveShadow = true;
+    const m = o.material; if (!m) return;
+    if (m.name === "abdomen") {
+      const cv = document.createElement("canvas"); cv.width = 16; cv.height = 256; const c = cv.getContext("2d");
+      c.fillStyle = "#5a391a"; c.fillRect(0, 0, 16, 256); c.fillStyle = "#140c06"; for (let i = 0; i < 7; i++) c.fillRect(0, 22 + i * 32, 16, 12);
+      const tex = new THREE.CanvasTexture(cv); tex.encoding = THREE.sRGBEncoding; tex.flipY = false; m.map = tex; m.color.set(0xffffff); m.roughness = 0.45; m.needsUpdate = true;
+    }
+    if (m.name === "eye") { m.roughness = 0.32; m.metalness = 0; m.color.set(0x7a0806); }
+    if (m.name === "wing") { m.transparent = true; m.opacity = 0.26; m.depthWrite = false; m.side = THREE.DoubleSide; o.castShadow = false; }
+  });
+  const poster = root.getObjectByName("poster"); if (poster) poster.visible = false;
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.97, 0.03), new THREE.MeshStandardMaterial({ color: 0x14181b, roughness: 0.5, metalness: 0.4 }));
+  frame.position.set(-0.45, 1.98, -1.68); frame.castShadow = true;
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(1.72, 0.86), new THREE.MeshBasicMaterial({ map: worldTex, toneMapped: false }));
+  wall.position.set(-0.45, 1.98, -1.66);
+  scene.add(frame, wall);
+  const screen = root.getObjectByName("screen");
+  if (screen) { screen.material = new THREE.MeshBasicMaterial({ map: screenTex, toneMapped: false }); screen.castShadow = false; }
+  for (const side of [-1, 1]) { const n = root.getObjectByName(`front_${side}_1`); if (n) legs[side] = { node: n, base: n.quaternion.clone() }; }
+  neck = root.getObjectByName("neck"); if (neck) neckBase = neck.quaternion.clone();
+}
+const clock = new THREE.Clock();
+const axisX = new THREE.Vector3(1, 0, 0), axisZ = new THREE.Vector3(0, 0, 1), q = new THREE.Quaternion();
+function animateFly(now) {
+  for (const side of [-1, 1]) {
+    const leg = legs[side]; if (!leg) continue;
+    const list = taps[String(side)]; while (list.length && now - list[0] > 0.3) list.shift();
+    let amt = 0; for (const st of list) { const p = (now - st) / 0.2; if (p >= 0 && p <= 1) amt = Math.max(amt, Math.sin(Math.PI * p)); }
+    leg.node.quaternion.copy(leg.base).multiply(q.setFromAxisAngle(axisX, amt * 0.26));
+  }
+  if (neck && !reduceMotion) neck.quaternion.copy(neckBase).multiply(q.setFromAxisAngle(axisX, Math.sin(now * 0.9) * 0.03 + Math.sin(now * 2.3) * 0.012)).multiply(new THREE.Quaternion().setFromAxisAngle(axisZ, Math.sin(now * 0.6 + 1) * 0.035));
+}
+
+// ---------------------------------------------------------------- setup controls
+let maps = [], wanted = null, restartNow = false, gameNo = 0;
+const mapSelect = $("mapSelect"), countrySelect = $("countrySelect");
+const prettyMap = (m) => (m.imported ? `${m.name} (imported)` : ({ map: "Modern day" }[m.name] || m.name));
+function fillMaps(selectPath) {
+  mapSelect.innerHTML = maps.map((m) => `<option value="${esc(m.path)}">${esc(prettyMap(m))}</option>`).join("");
+  if (selectPath) mapSelect.value = selectPath;
+}
+async function fillCountries() {
+  countrySelect.disabled = true;
+  countrySelect.innerHTML = '<option value="">Reading the map…</option>';
+  const info = await loadMap(mapSelect.value);
+  countrySelect.innerHTML = '<option value="">Random country</option>' + info.seats.map((c) => `<option value="${esc(c.iso)}">${esc(c.name)} · ${c.provinces} provinces</option>`).join("");
+  countrySelect.disabled = false;
+}
+mapSelect.addEventListener("change", () => fillCountries().catch((e) => setNow("That map could not be read", String(e.message || e))));
+$("importBtn").addEventListener("click", () => $("importFile").click());
+$("importFile").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const bytes = await f.arrayBuffer();
+    const r = await game.call("import", { name: f.name, bytes }, [bytes]);
+    maps = r.maps; fillMaps(r.path); await fillCountries();
+    $("setupNote").textContent = `Imported ${f.name}. Pick a country and start.`;
+  } catch (err) { $("setupNote").textContent = `Could not import ${f.name}: ${err.message || err}`; }
+  e.target.value = "";
+});
+$("startBtn").addEventListener("click", () => {
+  wanted = { path: mapSelect.value, iso: countrySelect.value || null };
+  restartNow = true;
+  setNow("Starting your game…", `${mapSelect.options[mapSelect.selectedIndex].text} · ${countrySelect.options[countrySelect.selectedIndex].text}`);
+});
+
+// ---------------------------------------------------------------- the game loop: the fly plays, forever
+let groups = null;
+async function playForever() {
+  let carry = null;                    // restart the same seat after a wipe-out
+  for (;;) {
+    const choice = wanted || { path: maps.find((m) => m.name === "1914")?.path || maps[0].path, iso: null };
+    restartNow = false;
+    const map = await loadMap(choice.path);
+    const pool = map.seats.filter((c) => c.provinces >= Math.min(12, map.seats[0].provinces));
+    const seat = carry || (choice.iso ? map.seats.find((c) => c.iso === choice.iso) : pool[Math.floor(Math.random() * pool.length)]);
+    carry = null;
+    const seed = (Math.random() * 0x7fffffff) >>> 0;
+    const mapName = prettyMap(maps.find((m) => m.path === choice.path) || { name: choice.path });
+    setNow(`Loading ${seat.name}…`, `${mapName} · seed ${seed}`);
+    const begin = await game.call("begin", { seat: `${choice.path}:${seat.iso}:rung`, seed, turns: TURNS });
+    if (!begin.ok) { setNow(`${seat.name} could not be loaded`, "Trying another game in a moment"); wanted = null; await sleep(3000); continue; }
+    gameNo += 1;
+    G.meta = { game: gameNo, seed, name: seat.name, iso: seat.iso, cid: seat.id, mapName };
+    G.turns = []; G.over = null;
+    G.crop = await seatCrop(map, seat.id); G.map = map;
+    activity && activity.fill(0);
+    showTurn(); drawSpark(); drawScreen();
+    const enc = new Encoder();
+    let landless = 0, start = null, last = null, wiped = false;
+    for (;;) {
+      if (restartNow) break;
+      const { position } = await game.call("position", { withMap: true });
+      last = position;
+      if (start === null) start = position.share;
+      if (position.over) break;
+      landless = position.mine === 0 ? landless + 1 : 0;
+      if (landless >= 2) { wiped = true; break; }
+      const t0 = performance.now();
+      const rates = enc.rates(position);
+      const tSeed = turnSeed(BRAIN_SEED, position.iso, position.turn);
+      const { counts, ms } = await brainW.call("run", { rates, windowMs: WINDOW_MS, seed: tSeed });
+      const { tokens } = choose(counts, groups, position, tSeed);
+      const { moves } = await game.call("play", { tokens: tokens.join(",") });
+      const nameOf = new Map(Object.entries(position.legal).flatMap(([m, list]) => list.map((x) => [`${m}:${x.a}`, x.name])));
+      const title = { e: "Economy", p: "Politics", w: "War", n: "Navy" };
+      const orders = moves.filter((mv) => mv.outcome === "did" && !mv.token.endsWith(":0")).map((mv) => [title[mv.token[0]], nameOf.get(mv.token) || mv.token]);
+      let dn = 0, fired = 0;
+      for (const i of dnIndex) dn += counts[i];
+      for (let i = 0; i < counts.length; i++) if (counts[i]) { fired++; activity[i] = Math.max(activity[i], Math.min(1, 0.45 + 0.18 * Math.log2(1 + counts[i]))); }
+      if (brainView) brainView.haze.intensity = 0.4 + Math.min(1.6, dn / 350);
+      const now = clock.getElapsedTime(); orders.slice(0, 8).forEach((_, i) => taps[i % 2 ? "1" : "-1"].push(now + i * 0.13));
+      G.turns.push({ pos: position, orders, dn, fired, rates, brainMs: ms });
+      paintInto(G.crop, MAPW, MAPH, mapImage, position, seat.id); mc.putImageData(mapImage, 0, 0);
+      paintInto(map.world, WW, WH, worldImage, position, seat.id); wc.putImageData(worldImage, 0, 0);
+      wc.fillStyle = "rgba(8, 10, 14, 0.72)"; wc.fillRect(24, 22, 620, 64); wc.fillStyle = "#F2B84B"; wc.font = "600 30px Figtree, sans-serif"; wc.textBaseline = "middle";
+      wc.fillText(`THE WORLD  ·  ${mapName.toUpperCase()}  ·  TURN ${position.turn + 1}`, 42, 54); worldTex.needsUpdate = true;
+      showTurn(); drawSpark(); drawScreen();
+      setNow(`Game ${gameNo}: ${seat.name}`, `turn ${position.turn + 1}/${TURNS} · ${orders.length} orders · brain ${(ms / 1000).toFixed(2)} s`);
+      const pace = +$("speedSelect").value - (performance.now() - t0);
+      if (pace > 0) await sleep(pace);
+      if (restartNow) break;
+      const end = await game.call("endTurn");
+      if (!end.more) { last = (await game.call("position", { withMap: false })).position; break; }
+    }
+    if (restartNow) continue;
+    const record = wiped ? { iso: seat.iso, wipedOut: true, turn: last.turn, start } : { iso: seat.iso, start, end: last.share };
+    results.push(record); showRecord();
+    G.over = wiped
+      ? { title: "WIPED OUT", line: `${seat.name} was wiped out on turn ${last.turn + 1}`, next: "The same game starts again, new seed" }
+      : { title: "GAME OVER", line: `${seat.name}: ${start.toFixed(2)}% → ${last.share.toFixed(2)}% of the world`, next: "The next game starts in a few seconds" };
+    drawScreen();
+    setNow(wiped ? `${seat.name} wiped out on turn ${last.turn + 1}` : `Game ${gameNo} over: ${last.share.toFixed(2)}% of the world`, G.over.next);
+    if (wiped) carry = seat;
+    for (let i = 0; i < 16 && !restartNow; i++) await sleep(500);
+  }
+}
+
+// ---------------------------------------------------------------- start
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h;
+  if (w > 900) camera.setViewOffset(w, h, 60, 0, w, h); else camera.clearViewOffset();
+  camera.updateProjectionMatrix();
+  if (brainView) brainView.mat.uniforms.uScale.value = (h / 900) * 1.1;
+  drawSpark();
+}
+addEventListener("resize", resize);
+resize();
+
+let lastMs = performance.now();
+function loop(nowMs) {
+  const dt = Math.min(0.1, (nowMs - lastMs) / 1000); lastMs = nowMs;
+  const now = clock.getElapsedTime();
+  if (tween) {
+    tween.t = Math.min(1, tween.t + dt / 1.2); const e = tween.t < 0.5 ? 4 * tween.t ** 3 : 1 - (-2 * tween.t + 2) ** 3 / 2;
+    camera.position.lerpVectors(tween.p0, tween.p1, e); yaw = tween.y0 + (tween.y1 - tween.y0) * e; pitch = tween.q0 + (tween.q1 - tween.q0) * e; applyCamera();
+    if (tween.t >= 1) tween = null;
+  }
+  const v = 1.1 * (keys.has("ShiftLeft") || keys.has("ShiftRight") ? 3.2 : 1) * dt;
+  const fwd = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation), right = new THREE.Vector3(1, 0, 0).applyEuler(camera.rotation);
+  let moved = false;
+  if (keys.has("KeyW") || keys.has("ArrowUp")) { camera.position.addScaledVector(fwd, v); moved = true; }
+  if (keys.has("KeyS") || keys.has("ArrowDown")) { camera.position.addScaledVector(fwd, -v); moved = true; }
+  if (keys.has("KeyD") || keys.has("ArrowRight")) { camera.position.addScaledVector(right, v); moved = true; }
+  if (keys.has("KeyA") || keys.has("ArrowLeft")) { camera.position.addScaledVector(right, -v); moved = true; }
+  if (keys.has("KeyE")) { camera.position.y += v; moved = true; }
+  if (keys.has("KeyQ")) { camera.position.y -= v; moved = true; }
+  if (moved) { tween = null; pressView(""); }
+  if (activity) {
+    const k = Math.exp(-dt * 2.2);
+    for (let i = 0; i < activity.length; i++) activity[i] = activity[i] > 0.002 ? activity[i] * k : 0;
+    actAttr.needsUpdate = true;
+    if (!reduceMotion) brainView.holder.rotation.y = now * 0.12;
+  }
+  animateFly(now);
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+
+(async () => {
+  try {
+    loadText.textContent = "Loading the room…";
+    const root = await new Promise((res, rej) => new THREE.GLTFLoader().load("./scene.gltf", (g) => res(g.scene), undefined, rej));
+    scene.add(root); dress(root); drawScreen();
+    requestAnimationFrame(loop);
+
+    loadText.textContent = "Downloading the connectome (91 MB)…";
+    const brainLoaded = new Promise((res, rej) => brainW.on((m) => {
+      if (m.type === "progress" && m.total) loadText.textContent = `Downloading the connectome: ${Math.round((100 * m.got) / m.total)}% of ${Math.round(m.total / 1e6)} MB…`;
+      if (m.type === "loaded") res(m);
+      if (m.type === "error") rej(new Error(m.message));
+    }));
+    brainW.post({ type: "load", metaUrl: "./data/brain.json", connectomeUrl: "./data/connectome.bin" });
+    const gameReady = new Promise((res, rej) => game.on((m) => { if (m.type === "ready") res(); if (m.type === "error") rej(new Error(m.message)); }));
+    const [loaded] = await Promise.all([brainLoaded, gameReady]);
+    groups = loaded.meta.groups; dnIndex = Int32Array.from(loaded.meta.dn);
+    loadText.textContent = "Placing 138,639 neurons…";
+    buildBrainView(await (await fetch("./data/brain.bin")).arrayBuffer());
+    resize();
+    loadText.textContent = "Reading the maps…";
+    maps = (await game.call("maps")).maps;
+    const first = maps.find((m) => m.name === "1914") || maps[0];
+    fillMaps(first.path); await fillCountries();
+    $("loading").dataset.done = "true";
+    playForever().catch((e) => { console.error(e); setNow("The game stopped", String(e.message || e)); });
+  } catch (e) {
+    loadText.className = "err";
+    loadText.textContent = `Could not start: ${e && e.message ? e.message : e}`;
+  }
+})();
+</script>

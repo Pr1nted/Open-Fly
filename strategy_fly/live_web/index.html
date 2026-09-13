@@ -1,0 +1,707 @@
+<meta charset="utf-8">
+<title>Strategy Fly Live</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --room: #0C1113;
+    --glass: rgba(10, 16, 18, 0.78);
+    --glass-edge: rgba(237, 230, 214, 0.10);
+    --paper: #EDE6D6;
+    --muted: #8F9A97;
+    --amber: #F2B84B;
+    --teal: #6FB7AE;
+    --war: #E0624F;
+    --good: #7FC98A;
+    --display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+    --body: "Figtree", "Helvetica Neue", Arial, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--room); color: var(--paper); font: 14px/1.45 var(--body); overflow: hidden; }
+  #stage { position: fixed; inset: 0; display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; outline: none; }
+  #stage:active { cursor: grabbing; }
+  .glass { background: var(--glass); border: 1px solid var(--glass-edge); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+
+  .ident { position: fixed; top: 18px; left: 20px; max-width: 380px; pointer-events: none; }
+  .ident h1 { margin: 0; font: 800 44px/0.9 var(--display); letter-spacing: 0.01em; text-transform: uppercase; display: flex; align-items: center; gap: 12px; }
+  .ident h1 span { color: var(--amber); }
+  .live { font: 600 11px/1 var(--mono); letter-spacing: 0.14em; color: #FBD9D3; background: rgba(224, 98, 79, 0.2); border: 1px solid rgba(224, 98, 79, 0.5); border-radius: 999px; padding: 5px 9px 5px 8px; display: inline-flex; gap: 6px; align-items: center; }
+  .live i { width: 7px; height: 7px; border-radius: 50%; background: var(--war); display: inline-block; animation: beat 1.4s ease-in-out infinite; }
+  .live[data-state="off"] { color: var(--muted); background: rgba(237, 230, 214, 0.06); border-color: var(--glass-edge); }
+  .live[data-state="off"] i { background: var(--muted); animation: none; }
+  @keyframes beat { 50% { opacity: 0.25; } }
+  .ident p { margin: 8px 0 0; color: var(--muted); font-size: 13px; text-wrap: balance; }
+
+  .views { position: fixed; top: 18px; right: 20px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: 60vw; }
+  .views button {
+    font: 500 12.5px/1 var(--body); color: var(--paper); background: var(--glass); border: 1px solid var(--glass-edge);
+    border-radius: 999px; padding: 8px 12px; cursor: pointer; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+  .views button:hover { border-color: rgba(242, 184, 75, 0.55); }
+  .views button[aria-pressed="true"] { background: var(--amber); color: #1B1406; border-color: var(--amber); }
+  button:focus-visible, #stage:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+  .rail { position: fixed; top: 76px; right: 20px; width: 300px; max-height: calc(100vh - 170px); overflow-y: auto; border-radius: 14px; padding: 16px 16px 14px; display: grid; gap: 14px; }
+  .gamehead { display: grid; gap: 2px; }
+  .gamehead .label { font: 600 11px/1 var(--body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .gamehead .who { font: 800 26px/1 var(--display); text-transform: uppercase; letter-spacing: 0.01em; }
+  .gamehead .turn { font: 400 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; margin: 0; }
+  .stats div { display: grid; gap: 2px; }
+  .stats dt { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .stats dd { margin: 0; font: 600 15px/1.2 var(--mono); font-variant-numeric: tabular-nums; }
+  .warline { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; min-height: 22px; }
+  .chip { font: 600 11px/1 var(--mono); padding: 5px 7px; border-radius: 6px; background: rgba(224, 98, 79, 0.16); color: #F3A396; border: 1px solid rgba(224, 98, 79, 0.35); }
+  .peace { color: var(--muted); font-size: 12.5px; }
+  h2 { margin: 0 0 6px; font: 600 11px/1 var(--body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--amber); }
+  .orders { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+  .orders li { display: grid; grid-template-columns: 74px 1fr; gap: 8px; font-size: 13px; }
+  .orders li span:first-child { color: var(--muted); font-size: 12px; }
+  .orders .none { color: var(--muted); display: block; }
+  .brainread { display: grid; gap: 8px; }
+  .spikes { font: 600 22px/1 var(--mono); font-variant-numeric: tabular-nums; }
+  .spikes small { font: 400 12px var(--body); color: var(--muted); margin-left: 6px; }
+  .bars { display: grid; gap: 6px; }
+  .bar { display: grid; grid-template-columns: 96px 1fr 38px; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); }
+  .bar i { display: block; height: 6px; border-radius: 3px; background: rgba(237, 230, 214, 0.08); overflow: hidden; }
+  .bar i b { display: block; height: 100%; width: 0; background: var(--teal); border-radius: 3px; transition: width 160ms linear; }
+  .bar output { font: 400 11.5px var(--mono); text-align: right; color: var(--paper); font-variant-numeric: tabular-nums; }
+  .record { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .record li { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: baseline; font: 400 12px var(--mono); font-variant-numeric: tabular-nums; }
+  .record li .iso { color: var(--paper); font-weight: 600; }
+  .record li .how { color: var(--muted); font-family: var(--body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .record li .up { color: var(--good); }
+  .record li .down { color: #F3A396; }
+  .record .empty { color: var(--muted); font-family: var(--body); display: block; grid-column: 1 / -1; }
+  .record li:has(.empty) { grid-template-columns: 1fr; }
+  .legend { display: grid; gap: 4px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--glass-edge); padding-top: 10px; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+
+  .statusbar { position: fixed; left: 20px; right: 340px; bottom: 18px; border-radius: 14px; padding: 10px 14px; display: grid; grid-template-columns: minmax(180px, 280px) 1fr; gap: 16px; align-items: center; }
+  .statusbar .now { display: grid; gap: 3px; }
+  .statusbar .now strong { font: 600 13.5px/1.2 var(--body); }
+  .statusbar .now span { font: 400 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .spark { position: relative; height: 44px; }
+  .spark canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  .hint { position: fixed; left: 20px; bottom: 90px; font-size: 12px; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; pointer-events: none; }
+  .hint kbd { font: 600 11px var(--mono); color: var(--paper); border: 1px solid var(--glass-edge); border-bottom-width: 2px; border-radius: 4px; padding: 1px 5px; background: rgba(10, 16, 18, 0.6); }
+
+  .loading { position: fixed; inset: 0; display: grid; place-items: center; background: var(--room); z-index: 5; transition: opacity 400ms ease; }
+  .loading[data-done="true"] { opacity: 0; pointer-events: none; }
+  .loading div { display: grid; gap: 10px; justify-items: center; text-align: center; }
+  .loading strong { font: 800 28px/1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
+  .loading p { margin: 0; color: var(--muted); font: 400 12.5px var(--mono); }
+  .loading .err { color: #F3A396; max-width: 460px; }
+
+  @media (max-width: 820px) {
+    .ident h1 { font-size: 30px; }
+    .ident p, .hint { display: none; }
+    .views { top: auto; bottom: 150px; left: 12px; right: 12px; max-width: none; justify-content: center; }
+    .rail { top: auto; bottom: 196px; left: 12px; right: 12px; width: auto; max-height: 34vh; }
+    .statusbar { left: 12px; right: 12px; bottom: 12px; grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { .loading, .bar i b { transition: none; } .live i { animation: none; } }
+</style>
+
+<canvas id="stage" tabindex="0" aria-label="3D scene: a fruit fly at a desk playing Open Doctrines live, with its brain beside it. Drag to look, W A S D to fly."></canvas>
+
+<header class="ident">
+  <h1>Strategy <span>Fly</span> <em class="live" id="livePill" data-state="off"><i></i><b id="liveText">OFFLINE</b></em></h1>
+  <p>A simulated fruit fly brain &mdash; the FlyWire connectome, 138,639 neurons &mdash; playing new games of Open Doctrines as you watch. Every order comes from its own spikes.</p>
+</header>
+
+<nav class="views" aria-label="Camera views">
+  <button type="button" data-view="shoulder" aria-pressed="true">Over its shoulder</button>
+  <button type="button" data-view="screen" aria-pressed="false">The screen</button>
+  <button type="button" data-view="brain" aria-pressed="false">The brain</button>
+  <button type="button" data-view="world" aria-pressed="false">The world</button>
+  <button type="button" data-view="side" aria-pressed="false">Side</button>
+  <button type="button" data-view="wide" aria-pressed="false">Wide</button>
+</nav>
+
+<aside class="rail glass" aria-live="polite">
+  <div class="gamehead">
+    <span class="label" id="gameLabel">Waiting for the first game</span>
+    <span class="who" id="gameWho">&mdash;</span>
+    <span class="turn" id="gameTurn">&nbsp;</span>
+  </div>
+  <dl class="stats">
+    <div><dt>Land</dt><dd id="land">&mdash;</dd></div>
+    <div><dt>Army</dt><dd id="army">&mdash;</dd></div>
+    <div><dt>Treasury</dt><dd id="treasury">&mdash;</dd></div>
+    <div><dt>At war with</dt><dd><span class="warline" id="war"><span class="peace">nobody</span></span></dd></div>
+  </dl>
+  <section>
+    <h2>Its orders this turn</h2>
+    <ul class="orders" id="orders"><li><span class="none">Not yet</span></li></ul>
+  </section>
+  <section class="brainread">
+    <h2>Its brain this turn</h2>
+    <div class="spikes"><span id="spikes">0</span><small>descending-neuron spikes</small></div>
+    <div class="bars">
+      <label class="bar">Sugar &middot; treasury<i><b id="bSugar"></b></i><output id="oSugar">0</output></label>
+      <label class="bar">Bitter &middot; losses<i><b id="bBitter"></b></i><output id="oBitter">0</output></label>
+      <label class="bar">Water &middot; land<i><b id="bWater"></b></i><output id="oWater">0</output></label>
+      <label class="bar">Hearing &middot; war<i><b id="bJon"></b></i><output id="oJon">0</output></label>
+    </div>
+  </section>
+  <section>
+    <h2>Its record</h2>
+    <ul class="record" id="record"><li><span class="empty">No finished games yet</span></li></ul>
+  </section>
+  <div class="legend">
+    <span><i style="background: var(--teal)"></i>Neurons, at their FlyWire positions</span>
+    <span><i style="background: var(--amber)"></i>Descending neurons &mdash; the ones read as orders</span>
+    <span><i style="background: #FFF1C9"></i>Flash &mdash; fired during this turn's 200 ms</span>
+  </div>
+</aside>
+
+<div class="hint" aria-hidden="true">
+  <span><kbd>Drag</kbd> look</span>
+  <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> fly</span>
+  <span><kbd>Q</kbd><kbd>E</kbd> down / up</span>
+  <span><kbd>Shift</kbd> faster</span>
+</div>
+
+<div class="statusbar glass">
+  <div class="now"><strong id="nowTitle">Connecting to the fly&hellip;</strong><span id="nowDetail">&nbsp;</span></div>
+  <div class="spark"><canvas id="spark" aria-label="Land held this game, turn by turn"></canvas></div>
+</div>
+
+<div class="loading" id="loading">
+  <div>
+    <strong>Waking the fly</strong>
+    <p id="loadText">Loading the room&hellip;</p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const fmt = new Intl.NumberFormat("en-US");
+  const loadText = $("loadText");
+
+  // ---- renderer and room ----
+  const canvas = $("stage");
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0c1113);
+  scene.fog = new THREE.Fog(0x0c1113, 5, 12);
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.02, 60);
+  scene.add(new THREE.HemisphereLight(0x9fb8c8, 0x1a1410, 0.35));
+  const lamp = new THREE.PointLight(0xffb877, 1.4, 6, 2);
+  lamp.position.set(0.95, 1.35, -0.75);
+  lamp.castShadow = true;
+  lamp.shadow.mapSize.set(1024, 1024);
+  scene.add(lamp);
+  const glow = new THREE.SpotLight(0xbcd6ff, 1.6, 4, Math.PI / 3, 0.8, 1.6);
+  glow.position.set(0, 1.16, -0.8);
+  glow.target.position.set(0, 1.0, 0.4);
+  scene.add(glow, glow.target);
+  const fill = new THREE.DirectionalLight(0x8aa5ff, 0.35);
+  fill.position.set(-2, 3, 2);
+  scene.add(fill);
+
+  // ---- camera ----
+  const VIEWS = {
+    shoulder: { pos: [1.15, 1.85, 1.35], look: [-0.35, 1.1, -0.5] },
+    screen:   { pos: [0.3, 1.38, -0.36], look: [0.0, 1.15, -0.88] },
+    brain:    { pos: [-0.45, 1.5, 0.55], look: [-1.15, 1.3, -0.35] },
+    world:    { pos: [-0.35, 1.8, 1.45], look: [-0.45, 1.95, -1.66] },
+    side:     { pos: [1.75, 1.4, -0.15], look: [0.0, 1.05, -0.45] },
+    wide:     { pos: [2.1, 2.3, 2.4], look: [-0.4, 1.0, -0.4] },
+  };
+  let yaw = 0, pitch = 0, tween = null;
+  const lookFrom = (pos, look) => {
+    const d = new THREE.Vector3().subVectors(new THREE.Vector3(...look), new THREE.Vector3(...pos)).normalize();
+    return { yaw: Math.atan2(-d.x, -d.z), pitch: Math.asin(d.y) };
+  };
+  const applyCamera = () => camera.rotation.set(pitch, yaw, 0, "YXZ");
+  const pressView = (name) => document.querySelectorAll(".views button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === name)));
+  const goTo = (name, instant) => {
+    const v = VIEWS[name], to = lookFrom(v.pos, v.look);
+    pressView(name);
+    if (instant || reduceMotion) { camera.position.set(...v.pos); yaw = to.yaw; pitch = to.pitch; applyCamera(); tween = null; return; }
+    let dy = to.yaw - yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+    tween = { t: 0, p0: camera.position.clone(), p1: new THREE.Vector3(...v.pos), y0: yaw, y1: yaw + dy, q0: pitch, q1: to.pitch };
+  };
+  document.querySelectorAll(".views button").forEach((b) => b.addEventListener("click", () => goTo(b.dataset.view)));
+  goTo("shoulder", true);
+
+  const keys = new Set();
+  addEventListener("keydown", (e) => keys.add(e.code));
+  addEventListener("keyup", (e) => keys.delete(e.code));
+  addEventListener("blur", () => keys.clear());
+  const pointers = new Map();
+  let pinchDist = 0;
+  canvas.addEventListener("pointerdown", (e) => { canvas.setPointerCapture(e.pointerId); pointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); canvas.focus(); });
+  canvas.addEventListener("pointermove", (e) => {
+    const p = pointers.get(e.pointerId);
+    if (!p) return;
+    if (pointers.size === 1) {
+      yaw -= (e.clientX - p.x) * 0.004;
+      pitch = Math.max(-1.45, Math.min(1.45, pitch - (e.clientY - p.y) * 0.004));
+      tween = null; pressView(""); applyCamera();
+    } else if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (pinchDist) moveForward((d - pinchDist) * 0.004);
+      pinchDist = d;
+    }
+    p.x = e.clientX; p.y = e.clientY;
+  });
+  const endPointer = (e) => { pointers.delete(e.pointerId); if (pointers.size < 2) pinchDist = 0; };
+  canvas.addEventListener("pointerup", endPointer);
+  canvas.addEventListener("pointercancel", endPointer);
+  canvas.addEventListener("wheel", (e) => { e.preventDefault(); moveForward(-e.deltaY * 0.0015); }, { passive: false });
+  function moveForward(amount) {
+    camera.position.addScaledVector(new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation), amount);
+    tween = null; pressView("");
+  }
+
+  // ---- the monitor: a canvas drawn from the live game ----
+  const SW = 1920, SH = 1080;
+  const screenCanvas = document.createElement("canvas");
+  screenCanvas.width = SW; screenCanvas.height = SH;
+  const sc = screenCanvas.getContext("2d");
+  const screenTex = new THREE.CanvasTexture(screenCanvas);
+  screenTex.encoding = THREE.sRGBEncoding; screenTex.flipY = false;
+  screenTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  const mapCanvas = document.createElement("canvas");
+  const mc = mapCanvas.getContext("2d");
+  let mapIds = null, mapW = 0, mapH = 0, mapImage = null;
+
+  const game = { meta: null, turns: [], over: null };
+  let results = [];
+
+  const hexRGB = (h) => [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  const hashRGB = (n) => { const h = (n * 2654435761) >>> 0; return [60 + (h & 127), 60 + ((h >> 8) & 127), 60 + ((h >> 16) & 127)]; };
+  function b64bytes(s) { const raw = atob(s); const b = new Uint8Array(raw.length); for (let i = 0; i < raw.length; i++) b[i] = raw.charCodeAt(i); return b; }
+
+  // The whole world, on the wall behind the desk.
+  const WW = 2048, WH = 1024;
+  const worldCanvas = document.createElement("canvas");
+  worldCanvas.width = WW; worldCanvas.height = WH;
+  const wc = worldCanvas.getContext("2d");
+  const worldImage = wc.createImageData(WW, WH);
+  let worldIds = null;
+  const worldTex = new THREE.CanvasTexture(worldCanvas);
+  worldTex.encoding = THREE.sRGBEncoding;
+  worldTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+  function paintMap(t) {
+    if (!t || !t.owners) return;
+    if (mapIds) { paintInto(mapIds, mapW, mapH, mapImage, t); mc.putImageData(mapImage, 0, 0); }
+    if (worldIds) {
+      paintInto(worldIds, WW, WH, worldImage, t);
+      wc.putImageData(worldImage, 0, 0);
+      wc.fillStyle = "rgba(8, 10, 14, 0.72)"; wc.fillRect(24, 22, 560, 64);
+      wc.fillStyle = "#F2B84B"; wc.font = "600 30px Figtree, sans-serif"; wc.textBaseline = "middle";
+      wc.fillText(`THE WORLD  ·  1914  ·  TURN ${t.turn + 1}`, 42, 54);
+      worldTex.needsUpdate = true;
+    }
+  }
+  function paintInto(ids, W, H, image, t) {
+    const ob = b64bytes(t.owners);
+    const owners = new Uint16Array(ob.buffer, 0, ob.length >> 1);
+    const colors = new Map();
+    for (const [cid, hex] of Object.entries(t.colors || {})) colors.set(Number(cid), hexRGB(hex));
+    const seat = game.meta ? game.meta.cid : -1;
+    const lut = new Uint32Array(owners.length);
+    for (let pid = 0; pid < owners.length; pid++) lut[pid] = owners[pid];
+    const px = image.data, mapW = W, mapH = H, mapIds = ids;
+    for (let y = 0; y < mapH; y++) {
+      for (let x = 0; x < mapW; x++) {
+        const i = y * mapW + x, pid = mapIds[i];
+        const cid = pid < lut.length ? lut[pid] : 0;
+        let r = 10, g = 15, b = 40;
+        if (pid && cid) { const c = colors.get(cid) || hashRGB(cid); r = c[0]; g = c[1]; b = c[2]; }
+        const right = x + 1 < mapW ? mapIds[i + 1] : pid, down = y + 1 < mapH ? mapIds[i + mapW] : pid;
+        const cr = right < lut.length ? lut[right] : 0, cd = down < lut.length ? lut[down] : 0;
+        if (pid && (cr !== cid || cd !== cid)) {
+          if (cid === seat || cr === seat || cd === seat) { r = 242; g = 184; b = 75; }
+          else { r *= 0.45; g *= 0.45; b *= 0.45; }
+        }
+        const o = i * 4; px[o] = r; px[o + 1] = g; px[o + 2] = b; px[o + 3] = 255;
+      }
+    }
+  }
+
+  const S = 1.2, s = (v) => v * S;
+  const font = (w, size, fam) => `${w} ${s(size)}px ${fam}`;
+  function drawScreen() {
+    const t = game.turns[game.turns.length - 1];
+    const m = game.meta;
+    sc.fillStyle = "#0c0e14"; sc.fillRect(0, 0, SW, SH);
+    sc.fillStyle = "#161a24"; sc.fillRect(0, 0, SW, s(56));
+    sc.textBaseline = "top";
+    sc.fillStyle = "#F2B84B"; sc.font = font(600, 24, "Figtree, sans-serif"); sc.fillText("OPEN DOCTRINES", s(20), s(14));
+    sc.fillStyle = "#E6E8EE"; sc.font = font(500, 20, "Figtree, sans-serif");
+    sc.fillText(m ? `1914  ·  ${m.name}  ·  Turn ${t ? t.turn + 1 : 1} / ${m.turns}` : "Waiting for a game", s(290), s(16));
+    sc.fillStyle = "#8C92A0"; sc.textAlign = "right";
+    sc.fillText(m ? `Game ${m.game}  ·  seed ${m.seed}` : "", SW - s(20), s(16));
+    sc.textAlign = "left";
+    if (mapImage) { sc.imageSmoothingEnabled = true; sc.imageSmoothingQuality = "high"; sc.drawImage(mapCanvas, 0, s(56), s(1100), s(550)); }
+    sc.strokeStyle = "#323846"; sc.lineWidth = s(2); sc.strokeRect(0, s(56), s(1100), s(550));
+    if (t) {
+      const war = t.war.length ? t.war.join(" ") : "nobody";
+      [["Land", `${t.share.toFixed(2)}% of the world`], ["Army", fmt.format(t.army)], ["Treasury", fmt.format(t.treasury)], ["At war with", war.slice(0, 34)]]
+        .forEach(([k, v], i) => {
+          sc.fillStyle = "#8C92A0"; sc.font = font(500, 16, "Figtree, sans-serif"); sc.fillText(k, s(24 + i * 270), s(622));
+          sc.fillStyle = k === "At war with" && t.war.length ? "#DC463C" : "#E6E8EE"; sc.font = font(600, 20, "JetBrains Mono, monospace");
+          sc.fillText(v, s(24 + i * 270), s(646));
+        });
+      sc.fillStyle = "#161a24"; sc.fillRect(s(24), s(700), s(1052), s(180));
+      sc.fillStyle = "#8C92A0"; sc.font = font(500, 16, "Figtree, sans-serif"); sc.fillText("Land held, % of the world", s(36), s(708));
+      const vals = game.turns.map((q) => q.share), total = m ? m.turns : 120;
+      const hi = Math.max(...vals) * 1.15, lo = Math.min(...vals) * 0.85 || 0;
+      sc.strokeStyle = "#F2B84B"; sc.lineWidth = s(3); sc.beginPath();
+      vals.forEach((v, i) => { const x = s(34) + s(1032) * (i / (total - 1)), y = s(870) - s(130) * ((v - lo) / ((hi - lo) || 1)); i ? sc.lineTo(x, y) : sc.moveTo(x, y); });
+      sc.stroke();
+      sc.fillStyle = "#161a24"; sc.fillRect(s(1100), s(56), SW - s(1100), SH);
+      sc.fillStyle = "#F2B84B"; sc.font = font(600, 24, "Figtree, sans-serif"); sc.fillText("THE FLY'S ORDERS", s(1124), s(76));
+      let y = s(116);
+      if (!t.orders.length) { sc.fillStyle = "#8C92A0"; sc.font = font(500, 20, "Figtree, sans-serif"); sc.fillText("(holds)", s(1124), y); }
+      t.orders.slice(0, 13).forEach(([mod, name]) => {
+        sc.fillStyle = "#8C92A0"; sc.font = font(500, 16, "Figtree, sans-serif"); sc.fillText(mod, s(1124), y + s(2));
+        sc.fillStyle = "#E6E8EE"; sc.font = font(500, 20, "Figtree, sans-serif"); sc.fillText(name, s(1224), y);
+        y += s(30);
+      });
+      sc.fillStyle = "#F2B84B"; sc.font = font(600, 24, "Figtree, sans-serif"); sc.fillText("BRAIN THIS TURN", s(1124), s(560));
+      sc.fillStyle = "#E6E8EE"; sc.font = font(500, 20, "Figtree, sans-serif"); sc.fillText(`${fmt.format(t.dn)} descending-neuron spikes`, s(1124), s(600));
+      sc.fillStyle = "#282e3c"; sc.fillRect(s(1124), s(632), s(452), s(16));
+      sc.fillStyle = "#F2B84B"; sc.fillRect(s(1124), s(632), s(452) * Math.min(1, t.dn / 750), s(16));
+      [["sugar", "sugar (treasury)"], ["bitter", "bitter (losses)"], ["water", "water (land)"], ["jon", "hearing (war)"]].forEach(([k, label], i) => {
+        const yy = s(672 + i * 42), v = t.rates[k] || 0;
+        sc.fillStyle = "#8C92A0"; sc.font = font(500, 16, "Figtree, sans-serif"); sc.fillText(label, s(1124), yy);
+        sc.fillStyle = "#282e3c"; sc.fillRect(s(1124), yy + s(20), s(452), s(10));
+        sc.fillStyle = "#6EAAE6"; sc.fillRect(s(1124), yy + s(20), s(452) * Math.min(1, v / 200), s(10));
+      });
+      sc.fillStyle = "#8C92A0"; sc.font = font(500, 16, "Figtree, sans-serif"); sc.fillText(`${fmt.format(t.fired)} neurons fired  ·  thought for ${t.think.toFixed(1)} s`, s(1124), SH - s(40));
+    }
+    if (game.over) {
+      sc.fillStyle = "rgba(8, 10, 14, 0.82)"; sc.fillRect(s(180), s(200), s(740), s(250));
+      sc.strokeStyle = "#F2B84B"; sc.lineWidth = s(2); sc.strokeRect(s(180), s(200), s(740), s(250));
+      sc.textAlign = "center";
+      sc.fillStyle = "#F2B84B"; sc.font = font(700, 44, "'Big Shoulders Display', sans-serif"); sc.fillText("GAME OVER", s(550), s(232));
+      const o = game.over;
+      sc.fillStyle = "#E6E8EE"; sc.font = font(500, 24, "Figtree, sans-serif");
+      const line = !o.ok ? `${o.name}: the game stopped early`
+        : o.eliminated_turn != null ? `${o.name} was wiped out on turn ${o.eliminated_turn + 1}`
+        : `${o.name}: ${o.start != null ? o.start.toFixed(2) : "?"}% → ${o.end.toFixed(2)}% of the world`;
+      sc.fillText(line, s(550), s(310));
+      sc.fillStyle = "#8C92A0"; sc.font = font(500, 20, "Figtree, sans-serif"); sc.fillText("Next game starting soon", s(550), s(370));
+      sc.textAlign = "left";
+    }
+    screenTex.needsUpdate = true;
+  }
+
+  // ---- rail and status bar ----
+  const els = { land: $("land"), army: $("army"), treasury: $("treasury"), war: $("war"), orders: $("orders"), spikes: $("spikes") };
+  const bars = [["sugar", "bSugar", "oSugar"], ["bitter", "bBitter", "oBitter"], ["water", "bWater", "oWater"], ["jon", "bJon", "oJon"]];
+  const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  function showTurn(t) {
+    const m = game.meta;
+    $("gameLabel").textContent = m ? `Game ${m.game} · seed ${m.seed}` : "";
+    $("gameWho").textContent = m ? m.name : "—";
+    $("gameTurn").textContent = t ? `Turn ${t.turn + 1} of ${m.turns}` : "Starting…";
+    if (!t) return;
+    els.land.textContent = `${t.share.toFixed(2)}%`;
+    els.army.textContent = fmt.format(t.army);
+    els.treasury.textContent = fmt.format(t.treasury);
+    els.war.innerHTML = t.war.length ? t.war.map((w) => `<span class="chip">${esc(w)}</span>`).join("") : '<span class="peace">nobody</span>';
+    els.orders.innerHTML = t.orders.length ? t.orders.map(([a, b]) => `<li><span>${esc(a)}</span><span>${esc(b)}</span></li>`).join("") : '<li><span class="none">Holds everything</span></li>';
+    els.spikes.textContent = fmt.format(t.dn);
+    bars.forEach(([k, b, o]) => { const v = t.rates[k] || 0; $(b).style.width = `${Math.min(100, v / 2)}%`; $(o).textContent = Math.round(v); });
+  }
+  function showRecord() {
+    const list = $("record");
+    if (!results.length) { list.innerHTML = '<li><span class="empty">No finished games yet</span></li>'; return; }
+    list.innerHTML = results.slice(-8).reverse().map((r) => {
+      if (!r.ok) return `<li><span class="iso">${esc(r.iso)}</span><span class="how">stopped early</span><span></span></li>`;
+      if (r.eliminated_turn != null) return `<li><span class="iso">${esc(r.iso)}</span><span class="how">wiped out, turn ${r.eliminated_turn + 1}</span><span class="down">&minus;${(r.start || 0).toFixed(2)}</span></li>`;
+      const d = r.end - (r.start || 0), cls = d >= 0 ? "up" : "down";
+      return `<li><span class="iso">${esc(r.iso)}</span><span class="how">${(r.start || 0).toFixed(2)}% → ${r.end.toFixed(2)}%</span><span class="${cls}">${d >= 0 ? "+" : ""}${d.toFixed(2)}</span></li>`;
+    }).join("");
+  }
+  const spark = $("spark");
+  function drawSpark() {
+    const r = spark.getBoundingClientRect(), dpr = Math.min(devicePixelRatio, 2);
+    spark.width = Math.round(r.width * dpr); spark.height = Math.round(r.height * dpr);
+    const c = spark.getContext("2d"); c.scale(dpr, dpr);
+    const w = r.width, h = r.height, total = game.meta ? game.meta.turns : 120, vals = game.turns.map((t) => t.share);
+    c.strokeStyle = "rgba(237, 230, 214, 0.08)"; c.lineWidth = 1; c.beginPath(); c.moveTo(0, h - 6); c.lineTo(w, h - 6); c.stroke();
+    if (!vals.length) return;
+    game.turns.forEach((t, i) => { if (t.war.length) { c.fillStyle = "rgba(224, 98, 79, 0.16)"; c.fillRect((w * i) / total, 0, w / total + 0.5, h); } });
+    const hi = Math.max(...vals) * 1.1, lo = Math.min(...vals) * 0.9;
+    const x = (i) => (w - 8) * (i / (total - 1)) + 4, y = (v) => h - 8 - (h - 16) * ((v - lo) / ((hi - lo) || 1));
+    c.strokeStyle = "#F2B84B"; c.lineWidth = 2; c.lineJoin = "round"; c.beginPath();
+    vals.forEach((v, i) => (i ? c.lineTo(x(i), y(v)) : c.moveTo(x(i), y(v)))); c.stroke();
+    const last = vals.length - 1;
+    c.fillStyle = "#F2B84B"; c.beginPath(); c.arc(x(last), y(vals[last]), 3.5, 0, Math.PI * 2); c.fill();
+  }
+  function setLive(on, text) { $("livePill").dataset.state = on ? "on" : "off"; $("liveText").textContent = text; }
+  function setNow(title, detail) { $("nowTitle").textContent = title; $("nowDetail").textContent = detail || " "; }
+
+  // ---- the brain ----
+  let brain = null, activity = null, actAttr = null;
+  function buildBrain(buf) {
+    const dv = new DataView(buf);
+    const n = dv.getUint32(8, true);
+    const pos = new Float32Array(buf, 16, n * 3);
+    const cls = new Uint8Array(buf, 16 + n * 12, n);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    const kind = new Float32Array(n); for (let i = 0; i < n; i++) kind[i] = cls[i];
+    geo.setAttribute("aKind", new THREE.BufferAttribute(kind, 1));
+    activity = new Float32Array(n);
+    actAttr = new THREE.BufferAttribute(activity, 1); actAttr.setUsage(THREE.DynamicDrawUsage);
+    geo.setAttribute("aAct", actAttr);
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      uniforms: { uScale: { value: 1 }, uPixel: { value: renderer.getPixelRatio() } },
+      vertexShader: `
+        attribute float aKind; attribute float aAct; uniform float uScale; uniform float uPixel;
+        varying vec3 vColor; varying float vAlpha;
+        void main() {
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          float hide = step(254.5, aKind);
+          vec3 base = vec3(0.30, 0.62, 0.58); float a = 0.11;
+          if (abs(aKind - 1.0) < 0.5) { base = vec3(0.30, 0.48, 0.58); a = 0.07; }
+          if (abs(aKind - 3.0) < 0.5) { base = vec3(0.50, 0.82, 0.68); a = 0.14; }
+          if (abs(aKind - 4.0) < 0.5) { base = vec3(0.95, 0.68, 0.25); a = 0.8; }
+          vColor = mix(base, vec3(1.0, 0.95, 0.80), clamp(aAct, 0.0, 1.0));
+          vAlpha = (a + aAct * 0.95) * (1.0 - hide);
+          float size = (aKind > 3.5 && aKind < 4.5 ? 2.6 : 1.6) + aAct * 5.0;
+          gl_PointSize = size * uPixel * uScale / max(0.05, -mv.z);
+          gl_Position = projectionMatrix * mv;
+        }`,
+      fragmentShader: `
+        varying vec3 vColor; varying float vAlpha;
+        void main() { vec2 d = gl_PointCoord - 0.5; float r = dot(d, d); if (r > 0.25) discard;
+          gl_FragColor = vec4(vColor, vAlpha * smoothstep(0.25, 0.0, r)); }`,
+    });
+    const points = new THREE.Points(geo, mat); points.frustumCulled = false;
+    const holder = new THREE.Group(); holder.position.set(-1.15, 1.3, -0.35); holder.add(points);
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.31, 0.025, 64), new THREE.MeshStandardMaterial({ color: 0x151c1f, roughness: 0.6, metalness: 0.3 }));
+    disc.position.set(-1.15, 1.02, -0.35); disc.receiveShadow = true;
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.004, 8, 96), new THREE.MeshBasicMaterial({ color: 0xf2b84b, transparent: true, opacity: 0.55 }));
+    ring.rotation.x = Math.PI / 2; ring.position.set(-1.15, 1.035, -0.35);
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 1.02, 16), new THREE.MeshStandardMaterial({ color: 0x0f1416, roughness: 0.5, metalness: 0.5 }));
+    stem.position.set(-1.15, 0.51, -0.35); stem.castShadow = true;
+    const haze = new THREE.PointLight(0x6fb7ae, 0.5, 1.6, 2); haze.position.set(-1.15, 1.3, -0.35);
+    scene.add(holder, disc, ring, stem, haze);
+    brain = { holder, mat, haze };
+  }
+  function pulse(t) {
+    if (!brain || !t.spikes) return;
+    const b = b64bytes(t.spikes), k = t.fired;
+    const idx = new Uint32Array(b.buffer, 0, k), cnt = new Uint8Array(b.buffer, k * 4, k);
+    for (let j = 0; j < k; j++) { const i = idx[j]; activity[i] = Math.max(activity[i], Math.min(1, 0.45 + 0.18 * Math.log2(1 + cnt[j]))); }
+    brain.haze.intensity = 0.4 + Math.min(1.6, t.dn / 350);
+  }
+
+  // ---- the fly ----
+  const legs = {};
+  let neck = null, neckBase = null, wings = [];
+  const taps = { "-1": [], "1": [] };
+  function dress(root) {
+    root.traverse((o) => {
+      if (!o.isMesh) return;
+      o.castShadow = true; o.receiveShadow = true;
+      const m = o.material; if (!m) return;
+      if (m.name === "abdomen") {
+        const cv = document.createElement("canvas"); cv.width = 16; cv.height = 256;
+        const c = cv.getContext("2d"); c.fillStyle = "#5a391a"; c.fillRect(0, 0, 16, 256); c.fillStyle = "#140c06";
+        for (let i = 0; i < 7; i++) c.fillRect(0, 22 + i * 32, 16, 12);
+        const tex = new THREE.CanvasTexture(cv); tex.encoding = THREE.sRGBEncoding; tex.flipY = false;
+        m.map = tex; m.color.set(0xffffff); m.roughness = 0.45; m.needsUpdate = true;
+      }
+      if (m.name === "eye") { m.roughness = 0.32; m.metalness = 0; m.color.set(0x7a0806); }
+      if (m.name === "wing") { m.transparent = true; m.opacity = 0.26; m.depthWrite = false; m.side = THREE.DoubleSide; o.castShadow = false; }
+    });
+    // The red poster was a placeholder; the world map hangs in its place, above the monitor.
+    const poster = root.getObjectByName("poster");
+    if (poster) poster.visible = false;
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.97, 0.03), new THREE.MeshStandardMaterial({ color: 0x14181b, roughness: 0.5, metalness: 0.4 }));
+    frame.position.set(-0.45, 1.98, -1.68);
+    frame.castShadow = true;
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(1.72, 0.86), new THREE.MeshBasicMaterial({ map: worldTex, toneMapped: false }));
+    wall.position.set(-0.45, 1.98, -1.66);
+    scene.add(frame, wall);
+    wc.fillStyle = "#0a0f28"; wc.fillRect(0, 0, WW, WH);
+    wc.fillStyle = "#8C92A0"; wc.font = "500 40px Figtree, sans-serif"; wc.textAlign = "center"; wc.textBaseline = "middle";
+    wc.fillText("The world map appears with the first turn", WW / 2, WH / 2); wc.textAlign = "left";
+    worldTex.needsUpdate = true;
+    const screen = root.getObjectByName("screen");
+    if (screen) { screen.material = new THREE.MeshBasicMaterial({ map: screenTex, toneMapped: false }); screen.castShadow = false; }
+    for (const side of [-1, 1]) { const n = root.getObjectByName(`front_${side}_1`); if (n) legs[side] = { node: n, base: n.quaternion.clone() }; }
+    neck = root.getObjectByName("neck"); if (neck) neckBase = neck.quaternion.clone();
+    wings = [-1, 1].map((sd) => root.getObjectByName(`wing_hinge_${sd}`)).filter(Boolean).map((n) => ({ node: n, base: n.quaternion.clone() }));
+  }
+  function queueTaps(n, now) {
+    for (let i = 0; i < Math.min(n, 8); i++) taps[i % 2 ? "1" : "-1"].push(now + i * 0.13);
+  }
+  const axisX = new THREE.Vector3(1, 0, 0), axisY = new THREE.Vector3(0, 1, 0), axisZ = new THREE.Vector3(0, 0, 1), q = new THREE.Quaternion();
+  function animateFly(now) {
+    for (const side of [-1, 1]) {
+      const leg = legs[side]; if (!leg) continue;
+      const list = taps[String(side)];
+      while (list.length && now - list[0] > 0.3) list.shift();
+      let amt = 0;
+      for (const start of list) { const p = (now - start) / 0.2; if (p >= 0 && p <= 1) amt = Math.max(amt, Math.sin(Math.PI * p)); }
+      leg.node.quaternion.copy(leg.base).multiply(q.setFromAxisAngle(axisX, amt * 0.26));
+    }
+    if (neck && !reduceMotion) {
+      neck.quaternion.copy(neckBase).multiply(q.setFromAxisAngle(axisX, Math.sin(now * 0.9) * 0.03 + Math.sin(now * 2.3) * 0.012))
+        .multiply(new THREE.Quaternion().setFromAxisAngle(axisZ, Math.sin(now * 0.6 + 1) * 0.035));
+    }
+  }
+
+  // ---- the live connection ----
+  let lastSeq = 0, work = Promise.resolve();
+  const clock = new THREE.Clock();
+  async function startGame(meta) {
+    game.meta = meta; game.turns = []; game.over = null;
+    const buf = await (await fetch(meta.map.url)).arrayBuffer();
+    mapIds = new Uint16Array(buf); mapW = meta.map.w; mapH = meta.map.h;
+    mapCanvas.width = mapW; mapCanvas.height = mapH;
+    mapImage = mc.createImageData(mapW, mapH);
+    activity && activity.fill(0);
+    showTurn(null); drawSpark(); drawScreen();
+  }
+  function handle(ev, replay) {
+    if (ev.kind === "game_start") return startGame(ev).then(() => setNow(`Game ${ev.game}: ${ev.name}`, "The fly is looking at the map"));
+    if (ev.kind === "turn") {
+      if (!game.meta || ev.game !== game.meta.game) return;
+      game.turns.push(ev); game.over = null;
+      if (!replay || ev === lastOf(game.turns)) { paintMap(ev); }
+      if (!replay) { pulse(ev); queueTaps(ev.orders.length, clock.getElapsedTime()); }
+      showTurn(ev); drawSpark(); drawScreen();
+      setNow(`Game ${ev.game}: ${game.meta.name}`, `turn ${ev.turn + 1}/${ev.turns} · ${ev.orders.length} orders · thought ${ev.think.toFixed(1)} s`);
+      return;
+    }
+    if (ev.kind === "game_over") {
+      game.over = ev;
+      if (!results.some((r) => r.game === ev.game)) results.push(ev);
+      showRecord(); drawScreen();
+      setNow(!ev.ok ? `Game ${ev.game} stopped early`
+        : ev.eliminated_turn != null ? `Game ${ev.game} over: ${ev.name} wiped out on turn ${ev.eliminated_turn + 1}`
+        : `Game ${ev.game} over: ${ev.end.toFixed(2)}% of the world`, "The next game starts in a few seconds");
+      return;
+    }
+    if (ev.kind === "status") { if (!game.meta) setNow(ev.text + "…", "The first game starts once the brain is built"); }
+  }
+  const lastOf = (a) => a[a.length - 1];
+  const enqueue = (ev, replay) => { work = work.then(() => handle(ev, replay)).catch((e) => console.error(e)); return work; };
+
+  async function connect() {
+    try {
+      const st = await (await fetch("/state", { cache: "no-store" })).json();
+      results = st.results || []; showRecord();
+      if (lastSeq === 0) {
+        if (st.game) await enqueue(st.game, true);
+        for (const ev of st.events) await enqueue(ev, true);
+        const t = lastOf(game.turns); if (t) { paintMap(t); drawScreen(); }
+        if (!st.game) setNow(st.status + "…", "The first game starts once the brain is built");
+        lastSeq = st.seq;
+      }
+    } catch (e) {
+      setLive(false, "OFFLINE"); setNow("Can't reach the fly", "Start it with strategy_fly.live, then this page reconnects by itself");
+      setTimeout(connect, 3000); return;
+    }
+    const es = new EventSource(`/events?since=${lastSeq}`);
+    es.onopen = () => setLive(true, "LIVE");
+    es.onmessage = (e) => { const ev = JSON.parse(e.data); if (ev.seq <= lastSeq) return; lastSeq = ev.seq; enqueue(ev, false); };
+    es.onerror = () => { es.close(); setLive(false, "RECONNECTING"); setTimeout(connect, 2500); };
+  }
+
+  // ---- load and run ----
+  function resize() {
+    const w = innerWidth, h = innerHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    if (w > 820) camera.setViewOffset(w, h, 160, 0, w, h); else camera.clearViewOffset();
+    camera.updateProjectionMatrix();
+    if (brain) brain.mat.uniforms.uScale.value = (h / 900) * 1.1;
+    drawSpark();
+  }
+  addEventListener("resize", resize);
+  resize();
+
+  (async () => {
+    try {
+      loadText.textContent = "Loading the room…";
+      const root = await new Promise((res, rej) => new THREE.GLTFLoader().load("/scene.gltf", (g) => res(g.scene), undefined, rej));
+      scene.add(root); dress(root); drawScreen();
+      loadText.textContent = "Placing 138,639 neurons…";
+      let buf = null;
+      for (let tries = 0; !buf; tries++) {
+        const r = await fetch("/brain.bin", { cache: "no-store" });
+        if (r.ok) buf = await r.arrayBuffer();
+        else { loadText.textContent = "The fly's brain is still being built…"; await new Promise((s2) => setTimeout(s2, 2000)); }
+      }
+      buildBrain(buf); resize();
+      loadText.textContent = "Unrolling the world map…";
+      while (!worldIds) {
+        const r = await fetch("/world.bin", { cache: "no-store" });
+        if (r.ok) worldIds = new Uint16Array(await r.arrayBuffer());
+        else await new Promise((s2) => setTimeout(s2, 1500));
+      }
+      $("loading").dataset.done = "true";
+      connect();
+      requestAnimationFrame(loop);
+    } catch (e) {
+      loadText.className = "err";
+      loadText.textContent = `Could not load the scene. Is strategy_fly.live running? (${e && e.message ? e.message : e})`;
+    }
+  })();
+
+  let lastTime = performance.now();
+  function loop(nowMs) {
+    const dt = Math.min(0.1, (nowMs - lastTime) / 1000); lastTime = nowMs;
+    const now = clock.getElapsedTime();
+    if (tween) {
+      tween.t = Math.min(1, tween.t + dt / 1.2);
+      const e = tween.t < 0.5 ? 4 * tween.t ** 3 : 1 - (-2 * tween.t + 2) ** 3 / 2;
+      camera.position.lerpVectors(tween.p0, tween.p1, e);
+      yaw = tween.y0 + (tween.y1 - tween.y0) * e; pitch = tween.q0 + (tween.q1 - tween.q0) * e; applyCamera();
+      if (tween.t >= 1) tween = null;
+    }
+    const fast = keys.has("ShiftLeft") || keys.has("ShiftRight") ? 3.2 : 1, v = 1.1 * fast * dt;
+    const fwd = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation), right = new THREE.Vector3(1, 0, 0).applyEuler(camera.rotation);
+    let moved = false;
+    if (keys.has("KeyW") || keys.has("ArrowUp")) { camera.position.addScaledVector(fwd, v); moved = true; }
+    if (keys.has("KeyS") || keys.has("ArrowDown")) { camera.position.addScaledVector(fwd, -v); moved = true; }
+    if (keys.has("KeyD") || keys.has("ArrowRight")) { camera.position.addScaledVector(right, v); moved = true; }
+    if (keys.has("KeyA") || keys.has("ArrowLeft")) { camera.position.addScaledVector(right, -v); moved = true; }
+    if (keys.has("KeyE")) { camera.position.y += v; moved = true; }
+    if (keys.has("KeyQ")) { camera.position.y -= v; moved = true; }
+    if (moved) { tween = null; pressView(""); }
+    if (activity) {
+      const k = Math.exp(-dt * 2.2);
+      for (let i = 0; i < activity.length; i++) activity[i] = activity[i] > 0.002 ? activity[i] * k : 0;
+      actAttr.needsUpdate = true;
+      if (!reduceMotion) brain.holder.rotation.y = now * 0.12;
+    }
+    animateFly(now);
+    renderer.render(scene, camera);
+    requestAnimationFrame(loop);
+  }
+})();
+</script>
