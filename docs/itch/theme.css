@@ -357,14 +357,19 @@
    The heading came out dark grey on the void. Headings outside the description get
    the same gold as the description's, and the posts and the reply box go onto the
    console palette. */
-#wrapper .game_comments_widget h2,
-#wrapper .view_game_page .left_col > div > h2 {
+/* Every section heading in the columns, not just Community: "Download" and
+   "Development log" sit in their own widgets, and the devlog list appears here as
+   soon as the first post goes up. The description's headings match these values,
+   so the two rules cannot fight. */
+#wrapper .left_col h2,
+#wrapper .right_col h2 {
     color: var(--of-gold);
     font: 12px/1.7 var(--of-pixel);
     letter-spacing: 0.03em;
     text-transform: uppercase;
 }
-#wrapper .game_comments_widget h2::before { content: "## "; color: var(--of-dim); }
+#wrapper .left_col h2:not(.formatted_description h2)::before,
+#wrapper .right_col h2::before { content: "## "; color: var(--of-dim); }
 
 #wrapper .game_comments_widget,
 #wrapper .community_post {
