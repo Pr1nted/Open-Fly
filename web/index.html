@@ -140,7 +140,7 @@
     </select>
   </label>
   <button type="button" class="go" id="startBtn">Start this game</button>
-  <p class="note" id="setupNote">If the fly's country is wiped out, the same game starts again with a new seed.</p>
+  <p class="note" id="setupNote">If the fly's country is wiped out, a random game moves on to a new country; a country you picked starts again with a new seed.</p>
   <p class="note credit">Connectome: <a href="https://flywire.ai" target="_blank" rel="noopener">FlyWire</a>, Princeton University and collaborators, <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>, converted for the browser. Brain model: Shiu et al., <i>Nature</i> 2024. <a href="./data/LICENSE.txt" target="_blank" rel="noopener">Data licence and citations</a></p>
 </section>
 
@@ -571,7 +571,7 @@ $("startBtn").addEventListener("click", () => {
 // ---------------------------------------------------------------- the game loop: the fly plays, forever
 let groups = null, odVersion = "";
 async function playForever() {
-  let carry = null;                    // restart the same seat after a wipe-out
+  let carry = null;                    // a country YOU picked comes back after a wipe-out; a random one does not
   for (;;) {
     const choice = wanted || { path: maps.find((m) => m.name === "1914")?.path || maps[0].path, iso: null };
     restartNow = false;
@@ -631,12 +631,15 @@ async function playForever() {
     const record = wiped ? { iso: seat.iso, wipedOut: true, turn: last.turn, start } : { iso: seat.iso, start, end: last.share };
     results.push(record); showRecord();
     G.over = wiped
-      ? { title: "WIPED OUT", line: `${seat.name} was wiped out on turn ${last.turn + 1}`, next: "The same game starts again, new seed" }
+      ? { title: "WIPED OUT", line: `${seat.name} was wiped out on turn ${last.turn + 1}`, next: choice.iso ? "The same country starts again, new seed" : "A new country starts next" }
       : { title: "GAME OVER", line: `${seat.name}: ${start.toFixed(2)}% → ${last.share.toFixed(2)}% of the world`, next: "The next game starts in a few seconds" };
     drawScreen();
     setNow(wiped ? `${seat.name} wiped out on turn ${last.turn + 1}` : `Game ${gameNo} over: ${last.share.toFixed(2)}% of the world`, G.over.next);
-    if (wiped) carry = seat;
-    for (let i = 0; i < 16 && !restartNow; i++) await sleep(500);
+    // Only a country the viewer chose is replayed. In random mode a quick wipe-out used to
+    // bring the same seat straight back, so a doomed one (Mexico, 1914) looped forever.
+    if (wiped && choice.iso) carry = seat;
+    const pauseTicks = +$("speedSelect").value === 0 ? 4 : 16;   // 2 s on the fastest speed, 8 s otherwise
+    for (let i = 0; i < pauseTicks && !restartNow; i++) await sleep(500);
   }
 }
 
