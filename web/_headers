@@ -1,0 +1,24 @@
+# Cloudflare Pages headers for Open Fly.
+#
+# Nothing here is content-hashed (OpenDoctrinesAgent.wasm is always called that,
+# and a new game release replaces it in place), so every load revalidates. An
+# unchanged file answers 304 with no body; a new release arrives at once.
+#
+# No X-Frame-Options and no frame-ancestors: Open Fly is meant to be framed, by
+# the Open Doctrines website, by itch.io, and by anyone who wants to embed it.
+/*
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=(), usb=(), midi=()
+
+/*.wasm
+  Content-Type: application/wasm
+/*.mjs
+  Content-Type: text/javascript; charset=utf-8
+/*.js
+  Content-Type: text/javascript; charset=utf-8
+# The gzip parts are fetched as bytes and inflated by the page itself, so they
+# must NOT come back with a Content-Encoding the browser would undo first.
+/data/*
+  Cache-Control: public, max-age=0, must-revalidate

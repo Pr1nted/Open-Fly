@@ -3,24 +3,34 @@
 // for a seat, a position, orders and the end of a turn; this module resolves
 // them with the game's own rules.
 import createOpenDoctrinesAgent from "./agent/OpenDoctrinesAgent.mjs";
+import { loadPacked } from "./packed.js";
 
 let od = null, api = null;
-const ready = createOpenDoctrinesAgent({
-  locateFile: (path) => new URL(`./agent/${path}`, import.meta.url).href,
-  print: (line) => self.postMessage({ type: "log", line }),
-  printErr: (line) => self.postMessage({ type: "log", line }),
-}).then((m) => {
-  od = m;
-  api = {
-    begin: m.cwrap("od_agent_begin", "number", ["string", "number", "number"]),
-    position: m.cwrap("od_agent_position", "string", ["number"]),
-    play: m.cwrap("od_agent_play", "string", ["string"]),
-    endTurn: m.cwrap("od_agent_end_turn", "number", []),
-    mapSeed: m.cwrap("od_agent_map_seed", "number", []),
-  };
-  try { m.FS.mkdir("/maps"); } catch (_) { /* already there */ }
-  self.postMessage({ type: "ready" });
-});
+
+// The game's data package comes in parts (see packed.js) and is handed to the
+// module whole: Emscripten asks getPreloadedPackage before it would fetch the
+// .data file itself, so the module never goes looking for the 22 MB original.
+const ready = loadPacked("./agent/OpenDoctrinesAgent.pack.json",
+  (got, total) => self.postMessage({ type: "progress", got, total }))
+  .then((dataPackage) => createOpenDoctrinesAgent({
+    locateFile: (path) => new URL(`./agent/${path}`, import.meta.url).href,
+    getPreloadedPackage: () => dataPackage,
+    print: (line) => self.postMessage({ type: "log", line }),
+    printErr: (line) => self.postMessage({ type: "log", line }),
+  }))
+  .then((m) => {
+    od = m;
+    api = {
+      begin: m.cwrap("od_agent_begin", "number", ["string", "number", "number"]),
+      position: m.cwrap("od_agent_position", "string", ["number"]),
+      play: m.cwrap("od_agent_play", "string", ["string"]),
+      endTurn: m.cwrap("od_agent_end_turn", "number", []),
+      mapSeed: m.cwrap("od_agent_map_seed", "number", []),
+    };
+    try { m.FS.mkdir("/maps"); } catch (_) { /* already there */ }
+    self.postMessage({ type: "ready" });
+  })
+  .catch((err) => self.postMessage({ type: "error", message: `The game could not start: ${err && err.message || err}` }));
 
 function listMaps() {
   const out = [];

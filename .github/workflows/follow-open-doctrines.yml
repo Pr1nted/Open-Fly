@@ -1,0 +1,210 @@
+# Follow Open Doctrines: every new release of the game is a new release of Open Fly.
+#
+#   Open Doctrines tags v1.2.1a
+#     -> this notices the tag (at once by dispatch, or within six hours by poll)
+#     -> builds that version's game module (OpenDoctrinesAgent)
+#     -> lets the fly play it once, headless, and writes the result into a devlog
+#     -> deploys the page to Cloudflare Pages, pushes it to itch.io, posts to Discord
+#     -> commits the devlog and the version it built back here
+#
+# NOTHING PUBLISHES UNTIL vars.OPEN_FLY_LIVE == 'true'. Before that, the poll and
+# the dispatch do nothing, and a manual run is a dry run: it builds, plays, and
+# uploads dist/ as an artifact, and publishes and commits nothing. See
+# docs/releasing.md.
+#
+# SECRETS, all optional. A missing one skips its step with a warning and the rest
+# of the release still happens, the same arrangement as Open Doctrines' itch step:
+#   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID   deploy to Pages
+#   BUTLER_API_KEY                                push to itch.io
+#   DISCORD_WEBHOOK_URL                           announce the devlog
+# VARIABLES: OPEN_FLY_LIVE (the green light), OPEN_FLY_PAGES_PROJECT (default
+#   open-fly), OPEN_FLY_ITCH_TARGET (default pr1nted/open-fly:web).
+name: Follow Open Doctrines
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  repository_dispatch:
+    types: [open-doctrines-release]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Open Doctrines tag to build (empty = the newest release tag)"
+        required: false
+      force:
+        description: "Build even if this tag was already built"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: follow-open-doctrines
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-22.04
+    outputs:
+      tag: ${{ steps.pick.outputs.tag }}
+      build: ${{ steps.pick.outputs.build }}
+      publish: ${{ steps.pick.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: pick
+        env:
+          ASKED: ${{ inputs.tag || github.event.client_payload.tag }}
+          FORCE: ${{ inputs.force }}
+          LIVE: ${{ vars.OPEN_FLY_LIVE }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          no() { echo "build=false" >> "$GITHUB_OUTPUT"; echo "$1"; exit 0; }
+          publish=false; [ "$LIVE" = "true" ] && publish=true
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
+          if [ "$publish" != "true" ] && [ "$EVENT" != "workflow_dispatch" ]; then
+            no "Not live yet (OPEN_FLY_LIVE is not 'true'): nothing to do. Run by hand for a dry run."
+          fi
+
+          tag="$ASKED"
+          if [ -z "$tag" ]; then
+            # Release tags only: v<digit>... Backups and SDK tags (backup/v1.2.0a,
+            # gearbox-v1.2) are not game releases and must never ship a fly.
+            tag=$(git ls-remote --tags --refs https://github.com/Pr1nted/Open-Doctrines.git 'v*' \
+                  | awk -F/ '{print $3}' | grep -E '^v[0-9]' | sort -V | tail -1)
+          fi
+          [ -n "$tag" ] || no "No Open Doctrines release tag found."
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+          built=$(cat release/open-doctrines-version 2>/dev/null || echo none)
+          if [ "$tag" = "$built" ] && [ "$FORCE" != "true" ]; then
+            no "Open Doctrines $tag is already built."
+          fi
+          # The agent door arrived in 13b2cd5. A release from before it cannot be
+          # played from outside, so it is skipped rather than failed.
+          if ! curl -sfI -o /dev/null "https://raw.githubusercontent.com/Pr1nted/Open-Doctrines/$tag/src/web/AgentWeb.cpp"; then
+            no "Open Doctrines $tag predates the agent door (src/web/AgentWeb.cpp); skipping."
+          fi
+          echo "build=true" >> "$GITHUB_OUTPUT"
+          echo "Open Doctrines $tag is new (last built: $built), publish=$publish"
+
+  release:
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    env:
+      TAG: ${{ needs.check.outputs.tag }}
+      PUBLISH: ${{ needs.check.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: mymindstorm/setup-emsdk@v14
+        with: { version: latest }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+
+      - name: Open Doctrines ${{ env.TAG }}
+        run: git clone --depth 1 --branch "$TAG" https://github.com/Pr1nted/Open-Doctrines.git ../OpenDoctrines
+
+      - name: The game, as a module the page drives
+        run: |
+          python3 -m pip install --quiet fonttools
+          tools/build_web_agent.sh ../OpenDoctrines
+          echo "$TAG" > web/agent/VERSION
+
+      - name: The brain
+        run: |
+          python3 -m pip install --quiet numpy pandas pyarrow
+          mkdir -p fly
+          B=https://raw.githubusercontent.com/philshiu/Drosophila_brain_model/main
+          curl -sSfL -o fly/Completeness_783.csv "$B/Completeness_783.csv"
+          curl -sSfL -o fly/Connectivity_783.parquet "$B/Connectivity_783.parquet"
+          curl -sSfL -o fly/neuron_annotations.tsv https://raw.githubusercontent.com/flyconnectome/flywire_annotations/main/supplemental_files/Supplemental_file1_neuron_annotations.tsv
+          python3 tools/export_web_brain.py --fly-data fly --out web/data
+
+      - name: The fly plays ${{ env.TAG }}
+        run: |
+          mkdir -p release
+          node tools/fly_run.mjs --turns 120 --out release/run.json
+
+      - name: Devlog
+        env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
+        run: python3 tools/devlog.py --tag "$TAG" --run release/run.json
+
+      - name: Pack for Pages and stage
+        run: |
+          python3 tools/pack_web.py web/data/connectome.bin web/agent/OpenDoctrinesAgent.data
+          python3 tools/stage_web.py --out dist
+
+      - name: Keep the build
+        uses: actions/upload-artifact@v4
+        with:
+          name: open-fly-${{ env.TAG }}
+          path: |
+            dist
+            release
+            devlogs
+          retention-days: 14
+
+      - name: Deploy to Cloudflare Pages
+        if: env.PUBLISH == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PROJECT: ${{ vars.OPEN_FLY_PAGES_PROJECT || 'open-fly' }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::warning title=Pages skipped::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID are not set, so the site was not deployed."
+            exit 0
+          fi
+          # --branch main, named: from a detached checkout wrangler would guess
+          # "HEAD" and deploy a preview while production stays old.
+          npx --yes wrangler@3 pages deploy dist --project-name "$PROJECT" --branch main
+
+      - name: Push to itch.io
+        if: env.PUBLISH == 'true'
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          TARGET: ${{ vars.OPEN_FLY_ITCH_TARGET || 'pr1nted/open-fly:web' }}
+        run: |
+          if [ -z "$BUTLER_API_KEY" ]; then
+            echo "::warning title=itch.io skipped::BUTLER_API_KEY is not set, so nothing was pushed to itch.io."
+            exit 0
+          fi
+          curl -sL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip && chmod +x butler
+          ./butler push dist "$TARGET" --userversion "${TAG#v}"
+
+      - name: Announce on Discord
+        if: env.PUBLISH == 'true'
+        env: { DISCORD_WEBHOOK_URL: "${{ secrets.DISCORD_WEBHOOK_URL }}" }
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "::warning title=Discord skipped::DISCORD_WEBHOOK_URL is not set."
+            exit 0
+          fi
+          curl -sS --fail-with-body -H "Content-Type: application/json" -d @release/discord.json "$DISCORD_WEBHOOK_URL"
+
+      - name: Record what was built
+        if: env.PUBLISH == 'true'
+        run: |
+          echo "$TAG" > release/open-doctrines-version
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add release/open-doctrines-version release/history.json release/itch-devlog.md devlogs web/devlog
+          git commit -m "Follow Open Doctrines $TAG" || exit 0
+          git pull --rebase
+          git push
+
+      - name: What to paste into itch.io
+        run: |
+          {
+            if [ "$PUBLISH" = "true" ]; then echo "## Open Fly now plays Open Doctrines $TAG"; else echo "## Dry run for $TAG (OPEN_FLY_LIVE is not set): nothing was published"; fi
+            echo
+            echo "itch.io has no devlog API: paste this at https://itch.io/dashboard, under Open Fly, then Devlog, then New post"
+            echo '```'
+            cat release/itch-devlog.md
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

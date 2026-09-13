@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>Strategy Fly</title>
+<title>Open Fly</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -111,7 +111,7 @@
 <canvas id="stage" tabindex="0" aria-label="3D scene: a simulated fruit fly brain at a desk playing Open Doctrines in this browser, with its brain beside it. Drag to look, W A S D to fly."></canvas>
 
 <header class="ident">
-  <h1>Strategy <span>Fly</span> <em class="live"><i></i>LIVE</em></h1>
+  <h1>Open <span>Fly</span> <em class="live"><i></i>LIVE</em></h1>
   <p>A simulated fruit fly brain &mdash; the FlyWire connectome, 138,639 neurons &mdash; playing Open Doctrines. Both run here, in your browser: every order comes from spikes computed on this machine.</p>
 </header>
 
@@ -418,7 +418,7 @@ const bars = [["sugar", "bSugar", "oSugar"], ["bitter", "bBitter", "oBitter"], [
 const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 function showTurn() {
   const t = G.turns[G.turns.length - 1], m = G.meta;
-  $("gameLabel").textContent = m ? `Game ${m.game} · ${m.mapName} · seed ${m.seed}` : "Getting ready";
+  $("gameLabel").textContent = m ? `Game ${m.game} · ${m.mapName} · seed ${m.seed}${odVersion ? ` · Open Doctrines ${odVersion}` : ""}` : "Getting ready";
   $("gameWho").textContent = m ? m.name : "—";
   $("gameTurn").textContent = t ? `Turn ${t.pos.turn + 1} of ${TURNS}` : "Starting…";
   if (!t) return;
@@ -563,7 +563,7 @@ $("startBtn").addEventListener("click", () => {
 });
 
 // ---------------------------------------------------------------- the game loop: the fly plays, forever
-let groups = null;
+let groups = null, odVersion = "";
 async function playForever() {
   let carry = null;                    // restart the same seat after a wipe-out
   for (;;) {
@@ -689,9 +689,14 @@ function loop(nowMs) {
       if (m.type === "loaded") res(m);
       if (m.type === "error") rej(new Error(m.message));
     }));
-    brainW.post({ type: "load", metaUrl: "./data/brain.json", connectomeUrl: "./data/connectome.bin" });
-    const gameReady = new Promise((res, rej) => game.on((m) => { if (m.type === "ready") res(); if (m.type === "error") rej(new Error(m.message)); }));
+    brainW.post({ type: "load", metaUrl: "./data/brain.json", connectomeManifest: "./data/connectome.pack.json" });
+    const gameReady = new Promise((res, rej) => game.on((m) => {
+      if (m.type === "progress" && m.total) loadText.textContent = `Downloading Open Doctrines: ${Math.round((100 * m.got) / m.total)}%…`;
+      if (m.type === "ready") res();
+      if (m.type === "error") rej(new Error(m.message));
+    }));
     const [loaded] = await Promise.all([brainLoaded, gameReady]);
+    try { odVersion = (await (await fetch("./agent/VERSION", { cache: "no-cache" })).text()).trim(); } catch (_) { /* unknown build */ }
     groups = loaded.meta.groups; dnIndex = Int32Array.from(loaded.meta.dn);
     loadText.textContent = "Placing 138,639 neurons…";
     buildBrainView(await (await fetch("./data/brain.bin")).arrayBuffer());

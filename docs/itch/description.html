@@ -1,0 +1,73 @@
+<p><strong>A simulated fruit-fly brain is playing a grand strategy game, live, in your browser.</strong>
+138,639 neurons, wired the way the FlyWire connectome maps a real adult <em>Drosophila</em>
+brain, fire turn after turn while their country goes to war, runs out of money and
+sometimes disappears from the map.</p>
+
+<p>Nothing here is pre-recorded, and nothing was trained. The brain runs on your machine,
+and every order you see comes from its spikes.</p>
+
+<h2>What you are watching</h2>
+
+<ul>
+<li>A fly at a desk, playing <a href="https://pr1nted.itch.io/open-doctrines">Open Doctrines</a> on the monitor. Move the camera anywhere in the room.</li>
+<li>Beside it, the brain itself. Every point is a neuron, and it lights up when that neuron spikes.</li>
+<li>On the wall, the whole world, redrawn every turn.</li>
+<li>On the monitor, the fly's country up close and the orders it just gave.</li>
+</ul>
+
+<h2>How a fly plays a strategy game</h2>
+
+<p>It does not know it is playing one. Each turn, what happened to its country becomes
+stimulation of real sensory neurons:</p>
+
+<ul>
+<li><strong>Sugar</strong> (20 neurons): land gained, and a budget in surplus.</li>
+<li><strong>Bitter</strong> (20): land lost, a budget in deficit, and new wars.</li>
+<li><strong>Water</strong> (18): money in the treasury.</li>
+<li><strong>The antenna's Johnston's organ</strong> (145): how many wars it is fighting.</li>
+</ul>
+
+<p>Then the whole brain runs for 200 milliseconds of simulated time. Its 1,299 descending
+neurons carry commands from a real fly's brain to its body. Here they are dealt into 39
+groups, one for each action the game offers, and the groups that fire most decide what the
+country does: fund industry, build a fort, repress, conciliate, bombard.</p>
+
+<p>That mapping is ours, not the fly's. It was written down before the fly played a single
+turn. The brain is the published model from Shiu et al. (<em>Nature</em>, 2024), ported
+to JavaScript and checked spike for spike against the original.</p>
+
+<h2>What it is not</h2>
+
+<p>It is not a living fly, it did not learn to play, and it is not good at it. In our tests
+it ended up holding less land than a country that did nothing at all. A fruit-fly brain
+evolved to find food and avoid being eaten, not to run Sweden in 1914. That is the point.</p>
+
+<h2>Pick the world</h2>
+
+<ul>
+<li>Choose any map that ships with Open Doctrines, or import your own <code>.odmap</code> from the game's map editor.</li>
+<li>Choose any country, or let it pick one at random.</li>
+<li>If the fly's country is wiped out, the same game starts again with a new seed.</li>
+</ul>
+
+<h2>It follows the game</h2>
+
+<p>Every time Open Doctrines releases, Open Fly rebuilds against the new version, lets the fly
+play it, and posts the result here as a devlog.</p>
+
+<h2>Play it yourself</h2>
+
+<p><a href="https://pr1nted.itch.io/open-doctrines">Open Doctrines</a> is a free, source-available
+grand strategy game that runs in your browser. It has six historical scenarios, a map editor
+and multiplayer. You will almost certainly do better than the fly.</p>
+
+<h2>Credits</h2>
+
+<ul>
+<li>Brain model: Shiu et al., "A Drosophila computational brain model reveals sensorimotor processing", <em>Nature</em> 634 (2024).</li>
+<li>Connectome: FlyWire. Dorkenwald et al., "Neuronal wiring diagram of an adult brain", and Schlegel et al., "Whole-brain annotation and multi-connectome cell typing of <em>Drosophila</em>", <em>Nature</em> 634 (2024).</li>
+<li>Game, fly and page: Pr1nted.</li>
+</ul>
+
+<p><em>You need a recent desktop browser. About 65 MB downloads the first time. The brain runs
+on your CPU in background threads, so a laptop's fan may notice.</em></p>

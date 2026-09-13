@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>Strategy Fly Live</title>
+<title>Open Fly Live</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -112,7 +112,7 @@
 <canvas id="stage" tabindex="0" aria-label="3D scene: a fruit fly at a desk playing Open Doctrines live, with its brain beside it. Drag to look, W A S D to fly."></canvas>
 
 <header class="ident">
-  <h1>Strategy <span>Fly</span> <em class="live" id="livePill" data-state="off"><i></i><b id="liveText">OFFLINE</b></em></h1>
+  <h1>Open <span>Fly</span> <em class="live" id="livePill" data-state="off"><i></i><b id="liveText">OFFLINE</b></em></h1>
   <p>A simulated fruit fly brain &mdash; the FlyWire connectome, 138,639 neurons &mdash; playing new games of Open Doctrines as you watch. Every order comes from its own spikes.</p>
 </header>
 
@@ -622,7 +622,7 @@
         lastSeq = st.seq;
       }
     } catch (e) {
-      setLive(false, "OFFLINE"); setNow("Can't reach the fly", "Start it with strategy_fly.live, then this page reconnects by itself");
+      setLive(false, "OFFLINE"); setNow("Can't reach the fly", "Start it with open_fly.live, then this page reconnects by itself");
       setTimeout(connect, 3000); return;
     }
     const es = new EventSource(`/events?since=${lastSeq}`);
@@ -668,7 +668,7 @@
       requestAnimationFrame(loop);
     } catch (e) {
       loadText.className = "err";
-      loadText.textContent = `Could not load the scene. Is strategy_fly.live running? (${e && e.message ? e.message : e})`;
+      loadText.textContent = `Could not load the scene. Is open_fly.live running? (${e && e.message ? e.message : e})`;
     }
   })();
 

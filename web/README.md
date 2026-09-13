@@ -1,4 +1,4 @@
-# Strategy Fly in the browser
+# Open Fly in the browser
 
 A simulated fruit fly brain plays Open Doctrines, and both run in the page:
 

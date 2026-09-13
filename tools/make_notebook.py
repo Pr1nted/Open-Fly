@@ -1,4 +1,4 @@
-"""Build notebooks/strategy_fly_colab.ipynb from the package sources.
+"""Build notebooks/open_fly_colab.ipynb from the package sources.
 
 The notebook is self-contained so it can be uploaded to Colab without giving
 Colab access to this private repository: every package file and the Open
@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PKG = "/content/strategy_fly_pkg"
+PKG = "/content/open_fly_pkg"
 OD_COMMIT = "05881e0"
 SEAT, SEED = "1914:SWE:rung", 20260801
 
@@ -27,7 +27,7 @@ def code(text, exact=False):
 
 
 cells = [md(f"""
-# Strategy Fly
+# Open Fly
 
 A **simulation** of the FlyWire fruit fly connectome (Shiu et al. 2024 model) plays
 **Open Doctrines** through the game's benchmark agent door, under the same action
@@ -43,12 +43,12 @@ Run all cells in order. Runtime: CPU is enough.
 # the first version of this notebook made them in the build cell, after the
 # files had already failed to write.
 cells.append(code(f"""
-!mkdir -p {PKG}/strategy_fly {PKG}/patches /content/results; nproc; free -g | head -2; python3 --version
+!mkdir -p {PKG}/open_fly {PKG}/patches /content/results; nproc; free -g | head -2; python3 --version
 """))
 
-for rel in ["strategy_fly/__init__.py", "strategy_fly/protocol.py", "strategy_fly/driver.py",
-            "strategy_fly/brain.py", "strategy_fly/encode.py", "strategy_fly/decode.py",
-            "strategy_fly/players.py", "strategy_fly/sensory_ids.json",
+for rel in ["open_fly/__init__.py", "open_fly/protocol.py", "open_fly/driver.py",
+            "open_fly/brain.py", "open_fly/encode.py", "open_fly/decode.py",
+            "open_fly/players.py", "open_fly/sensory_ids.json",
             "patches/opendoctrines-agent-door.patch"]:
     body = (ROOT / rel).read_text()
     cells.append(code(f"%%writefile {PKG}/{rel}\n{body}", exact=True))
@@ -57,7 +57,7 @@ cells.append(md("## 1. Build the game server (headless, about 10 minutes)"))
 cells.append(code(f"""
 %%bash
 set -e
-mkdir -p {PKG}/strategy_fly {PKG}/patches /content/results
+mkdir -p {PKG}/open_fly {PKG}/patches /content/results
 apt-get -qq update
 apt-get -qq install -y build-essential cmake ninja-build git git-lfs python3 libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev libxkbcommon-dev > /dev/null
 cd /content
@@ -82,8 +82,8 @@ ls -la build/OpenDoctrinesServer
 cells.append(md("## 2. Check the agent door before any brain touches it"))
 cells.append(code(f"""
 import sys; sys.path.insert(0, "{PKG}")
-from strategy_fly.driver import run_seat
-from strategy_fly.players import AlwaysHold
+from open_fly.driver import run_seat
+from open_fly.players import AlwaysHold
 BIN, DATA = "/content/od/build/OpenDoctrinesServer", "/content/od/data/"
 r = run_seat(BIN, DATA, "{SEAT}", {SEED}, AlwaysHold(), label="door-check", turns=3, log_dir="/content/results")
 print(r)
@@ -105,14 +105,14 @@ ls -la
 """))
 cells.append(code(f"""
 import json, time
-from strategy_fly.brain import FlyBrain, peak_rss_mb
-from strategy_fly import decode
-from strategy_fly.encode import Encoder
-from strategy_fly.players import FlyPlayer, RandomLegal
+from open_fly.brain import FlyBrain, peak_rss_mb
+from open_fly import decode
+from open_fly.encode import Encoder
+from open_fly.players import FlyPlayer, RandomLegal
 
 PARTITION_SEED, BRAIN_SEED, WINDOW_MS = 783, 20240922, 200.0   # fixed in PREREGISTRATION.md
 brain = FlyBrain("/content/fly/Completeness_783.csv", "/content/fly/Connectivity_783.parquet")
-ids = json.load(open("{PKG}/strategy_fly/sensory_ids.json"))
+ids = json.load(open("{PKG}/open_fly/sensory_ids.json"))
 sizes = {{ch: brain.add_channel(ch, ids[ch]) for ch in ("sugar", "bitter", "water", "jon")}}
 units = decode.descending_units("/content/fly/neuron_annotations.tsv", brain.index)
 groups = decode.make_groups(units, PARTITION_SEED)
@@ -154,12 +154,12 @@ for label, player in (("hold", AlwaysHold()), ("random", RandomLegal(seed=BRAIN_
     print(run_seat(BIN, DATA, "{SEAT}", {SEED}, player, label=label, turns=120, log_dir="/content/results"))
 """))
 cells.append(code("""
-!cd /content && zip -qr strategy_fly_results.zip results && ls -la strategy_fly_results.zip
+!cd /content && zip -qr open_fly_results.zip results && ls -la open_fly_results.zip
 """))
 
 nb = {"cells": cells, "metadata": {"kernelspec": {"name": "python3", "display_name": "Python 3"},
                                    "language_info": {"name": "python"}, "colab": {"provenance": []}},
       "nbformat": 4, "nbformat_minor": 5}
-out = ROOT / "notebooks" / "strategy_fly_colab.ipynb"
+out = ROOT / "notebooks" / "open_fly_colab.ipynb"
 out.write_text(json.dumps(nb, indent=1))
 print("wrote", out, len(cells), "cells")

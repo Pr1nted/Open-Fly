@@ -12,3 +12,10 @@ Completeness_*.csv
 /web/data/brain.bin
 /web/agent/
 .venv/
+# Packed for Pages by tools/pack_web.py, and the deploy folder tools/stage_web.py fills.
+/web/data/*.gz.*
+/web/data/*.pack.json
+/dist/
+# Written by each release run; history.json keeps what matters from them.
+/release/run.json
+/release/discord.json

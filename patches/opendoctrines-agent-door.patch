@@ -5,7 +5,7 @@ diff --color -ru a/src/Game_AITrain.cpp b/src/Game_AITrain.cpp
      applyFpsTarget(-1);
      Audio::s_disabled = true;
  
-+    m_config.aiDifficulty = 3;   // Strategy Fly: match tools/od_bench.py DIFFICULTY
++    m_config.aiDifficulty = 3;   // Open Fly: match tools/od_bench.py DIFFICULTY
      startBenchSeat(seatSpec, untilTurn);
      while (m_loadingPhase != LOAD_NONE && m_loadingPhase != LOAD_DONE) {
          if (WindowShouldClose()) return false;

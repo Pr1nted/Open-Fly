@@ -25,7 +25,7 @@ import pandas as pd
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 
-from strategy_fly import decode  # noqa: E402
+from open_fly import decode  # noqa: E402
 
 PARTITION_SEED = 783
 PARAMS = {"v_0": -52.0, "v_rst": -52.0, "v_th": -45.0, "t_mbr": 20.0, "tau": 5.0,
@@ -68,7 +68,7 @@ def main():
 
     tsv = os.path.join(fd, "neuron_annotations.tsv")
     groups = decode.make_groups(decode.descending_units(tsv, index), PARTITION_SEED)
-    sensory_ids = json.load(open(os.path.join(os.path.dirname(HERE), "strategy_fly", "sensory_ids.json")))
+    sensory_ids = json.load(open(os.path.join(os.path.dirname(HERE), "open_fly", "sensory_ids.json")))
     sensory = {ch: [index[f] for f in sensory_ids[ch] if f in index] for ch in ("sugar", "bitter", "water", "jon")}
     dn = sorted(set(int(i) for m in decode.MODULES for g in groups[m] for i in g))
     json.dump({"n": n, "params": PARAMS, "partition_seed": PARTITION_SEED,

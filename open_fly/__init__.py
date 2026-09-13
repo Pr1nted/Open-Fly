@@ -1,4 +1,4 @@
-"""Strategy Fly: a simulated fruit fly brain plays Open Doctrines.
+"""Open Fly: a simulated fruit fly brain plays Open Doctrines.
 
 It is a leaky integrate-and-fire simulation of the FlyWire connectome
 (Shiu et al. 2024), not a living fly. See PREREGISTRATION.md for every

@@ -22,7 +22,7 @@ def run_seat(binary, data_dir, seat, seed, player, *, label, turns=120,
     os.makedirs(log_dir, exist_ok=True)
     # A seat can name its map by path ("/maps/x.odmap:SWE"): file-name-safe.
     tag = re.sub(r"[^A-Za-z0-9_.-]+", "_", f"{label}__{seat}__{seed}")[-120:]
-    fifo = f"/tmp/strategy_fly_{os.getpid()}_{tag}.fifo"
+    fifo = f"/tmp/open_fly_{os.getpid()}_{tag}.fifo"
     if os.path.exists(fifo):
         os.unlink(fifo)
     os.mkfifo(fifo)

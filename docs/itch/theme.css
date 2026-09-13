@@ -1,0 +1,331 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Press+Start+2P&display=swap");
+/* ===========================================================================
+   Open Fly — itch.io page CSS
+   ===========================================================================
+
+   PASTE INTO: Edit theme -> the CSS box at the bottom of the sidebar. Custom CSS
+   is enabled per account, and Pr1nted's account has it (granted 2026-08-14 for
+   Open Doctrines), so this works on a new project straight away.
+
+   Also set, in the same sitting, in the theme editor's pickers:
+       BG #030806   BG2 #06120D   Text #B8F5D2   Link #4DFF9B   Button #4DFF9B
+   The stylesheet paints over them, but they are what shows before the fonts and
+   this file arrive, and on any part of the page a selector below misses.
+
+   TWO PARENTS. The console is Pr1nted's profile: void green-black, Press Start
+   2P, scanlines, square edges, a shell prompt. The gold is Open Doctrines' own
+   accent (#FFD700, config.json's accentColor), used only for what belongs to the
+   game -- section headings, the game frame's hover, the gold spikes in the
+   background. Green is the brain, gold is the game; the page never mixes them
+   up, so it reads as one project playing the other.
+
+   ITCH'S RULES (same as docs/itch/theme.css in Open Doctrines, which found them
+   the hard way):
+     - Style only inside .wrapper, and do not hide the footer links. So the
+       custom properties live on #wrapper, not :root.
+     - No new HTML except inside the description, and itch strips classes there.
+       Every effect below hangs off ::before/::after of elements itch renders.
+     - No JavaScript: keyframes and gradients only.
+     - No images from this repository: it is private, and jsDelivr cannot serve
+       a private repo. Nothing below needs one.
+
+   SELECTORS are itch's internal names (checked against the Open Doctrines page
+   on 2026-08-14) and they move. If an effect is missing, querySelectorAll the
+   live page before believing this file.
+
+   OFF under 700px and under prefers-reduced-motion: the spikes, the ticker and
+   the cursor all stop, and nothing is lost but movement.
+   =========================================================================== */
+
+#wrapper {
+    --of-void:  #030806;
+    --of-panel: #06120d;
+    --of-line:  #1a4d33;
+    --of-dim:   #2e8f5c;
+    --of-green: #4dff9b;
+    --of-text:  #b8f5d2;
+    --of-white: #e8fff1;
+    --of-gold:  #ffd700;
+    --of-pixel: "Press Start 2P", ui-monospace, Menlo, Consolas, monospace;
+    --of-mono:  "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+
+    background:
+        radial-gradient(110% 50% at 50% -8%, rgba(77, 255, 155, 0.08), transparent 62%),
+        var(--of-void);
+    color: var(--of-text);
+    font-family: var(--of-mono);
+    position: relative;
+}
+
+/* ---- the brain, firing ----------------------------------------------------
+   Three dot lattices at co-prime pitches, so no two layers ever line up into a
+   visible grid. Green is neurons; the sparse gold layer is the game's. The gold
+   one jumps in steps -- spikes, not a drift -- because a spike is what the model
+   actually produces: nothing, then an event. */
+#wrapper::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+        radial-gradient(circle, rgba(77, 255, 155, 0.55) 0 1px, transparent 1.6px),
+        radial-gradient(circle, rgba(77, 255, 155, 0.30) 0 1px, transparent 1.6px),
+        radial-gradient(circle, rgba(255, 215, 0, 0.70) 0 1.2px, transparent 2px);
+    background-size: 37px 41px, 83px 71px, 223px 197px;
+    background-position: 0 0, 13px 29px, 101px 53px;
+    opacity: 0.2;
+    animation: of-spikes 2.6s steps(1) infinite;
+}
+
+@keyframes of-spikes {
+    0%   { background-position: 0 0, 13px 29px, 101px 53px; }
+    31%  { background-position: 0 0, 13px 29px, 17px 140px; }
+    58%  { background-position: 0 0, 13px 29px, 190px 9px; }
+    77%  { background-position: 0 0, 13px 29px, 64px 101px; }
+}
+
+/* ---- scanlines, the profile's ---------------------------------------------- */
+#wrapper::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    background: repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0, 0, 0, 0.26) 2px 3px);
+}
+
+/* ---- the terminal window ---------------------------------------------------- */
+#inner_column {
+    position: relative;
+    z-index: 1;
+    background: var(--of-panel);
+    border: 1px solid var(--of-line);
+    border-top: 2px solid var(--of-gold);
+    border-radius: 0;
+    box-shadow: 8px 8px 0 rgba(26, 77, 51, 0.55);
+}
+
+/* The title bar: where this is, and what is running. */
+#inner_column::before {
+    content: "pr1nted@itch.io:~/open-fly$ ./open-fly --watch";
+    display: block;
+    padding: 10px 14px;
+    background: var(--of-void);
+    border-bottom: 1px solid var(--of-line);
+    color: var(--of-green);
+    font: 10px/1.6 var(--of-pixel);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---- header: the ticker under the banner ------------------------------------ */
+#header {
+    position: relative;
+    overflow: hidden;
+    background: var(--of-void);
+    border-bottom: 1px solid var(--of-line);
+}
+
+#header h1,
+#header .game_title {
+    font-family: var(--of-pixel);
+    color: var(--of-green);
+    text-shadow: 0 0 12px rgba(77, 255, 155, 0.45);
+    letter-spacing: 0.02em;
+}
+
+/* Twice, so the loop has no seam: it slides exactly half its width. */
+#header::after {
+    content: "SIMULATED FLYWIRE CONNECTOME  \25CF  138,639 NEURONS  \25CF  LEAKY INTEGRATE-AND-FIRE, SHIU ET AL. 2024  \25CF  PLAYING OPEN DOCTRINES  \25CF  IN YOUR BROWSER  \25CF  NOTHING PRE-RECORDED  \25CF  SIMULATED FLYWIRE CONNECTOME  \25CF  138,639 NEURONS  \25CF  LEAKY INTEGRATE-AND-FIRE, SHIU ET AL. 2024  \25CF  PLAYING OPEN DOCTRINES  \25CF  IN YOUR BROWSER  \25CF  NOTHING PRE-RECORDED  \25CF  ";
+    display: block;
+    width: max-content;
+    padding: 7px 0;
+    color: var(--of-dim);
+    font: 9px/1.4 var(--of-pixel);
+    white-space: nowrap;
+    animation: of-ticker 60s linear infinite;
+}
+
+@keyframes of-ticker {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
+
+/* ---- the description -------------------------------------------------------- */
+#wrapper .formatted_description {
+    font-family: var(--of-mono);
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--of-text);
+}
+
+/* It opens like a file being read ... */
+#wrapper .formatted_description::before {
+    content: "$ cat README";
+    display: block;
+    margin-bottom: 1.2em;
+    color: var(--of-dim);
+    font: 10px/1.6 var(--of-pixel);
+}
+
+/* ... and ends at a prompt. The cursor is a gradient in the padding, so only
+   the block blinks and the prompt stays put. */
+#wrapper .formatted_description::after {
+    content: "pr1nted@itch.io:~/open-fly$";
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    margin-top: 2.4em;
+    padding-right: 1.6ch;
+    color: var(--of-green);
+    font: 10px/1.6 var(--of-pixel);
+    background: linear-gradient(var(--of-green), var(--of-green)) right 0.2ch center / 1ch 1.3em no-repeat;
+    animation: of-cursor 1.1s steps(1) infinite;
+}
+
+@keyframes of-cursor {
+    0%  { background-size: 1ch 1.3em; }
+    50% { background-size: 0 0; }
+}
+
+#wrapper .formatted_description h2,
+#wrapper .formatted_description h3 {
+    margin: 2.2em 0 0.8em;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed var(--of-line);
+    color: var(--of-gold);
+    font: 12px/1.7 var(--of-pixel);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    text-wrap: balance;
+}
+
+#wrapper .formatted_description h2::before { content: "## "; color: var(--of-dim); }
+#wrapper .formatted_description h3::before { content: "### "; color: var(--of-dim); }
+
+#wrapper .formatted_description strong { color: var(--of-white); }
+
+#wrapper .formatted_description ul { padding-left: 0; list-style: none; }
+#wrapper .formatted_description li { padding-left: 2.2ch; text-indent: -2.2ch; }
+#wrapper .formatted_description li::before { content: "> "; color: var(--of-green); }
+
+#wrapper .formatted_description code,
+#wrapper .formatted_description pre {
+    background: var(--of-void);
+    border: 1px solid var(--of-line);
+    border-radius: 0;
+    color: var(--of-green);
+    font-family: var(--of-mono);
+}
+#wrapper .formatted_description code { padding: 1px 5px; }
+#wrapper .formatted_description pre { padding: 12px 14px; overflow-x: auto; line-height: 1.5; }
+#wrapper .formatted_description pre code { border: 0; padding: 0; }
+
+#wrapper .formatted_description blockquote {
+    margin: 1.4em 0;
+    padding: 4px 0 4px 16px;
+    border-left: 2px solid var(--of-gold);
+    color: var(--of-white);
+}
+
+#wrapper .formatted_description img {
+    border: 1px solid var(--of-line);
+    border-radius: 0;
+}
+
+/* ---- links and buttons -------------------------------------------------------- */
+#wrapper a:not(.button) {
+    color: var(--of-green);
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
+}
+#wrapper a:not(.button):hover {
+    background: var(--of-green);
+    color: var(--of-void);
+    text-decoration: none;
+}
+
+#wrapper .button {
+    background: var(--of-green);
+    color: var(--of-void);
+    border: 0;
+    border-radius: 0;
+    font-family: var(--of-pixel);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    text-shadow: none;
+    box-shadow: 4px 4px 0 var(--of-line);
+    transition: transform 80ms, box-shadow 80ms, background-color 80ms;
+}
+#wrapper .button:hover {
+    background: var(--of-gold);
+    box-shadow: 2px 2px 0 var(--of-dim);
+    transform: translate(2px, 2px);
+}
+
+#wrapper a:focus-visible,
+#wrapper .button:focus-visible {
+    outline: 2px solid var(--of-gold);
+    outline-offset: 3px;
+}
+
+#wrapper ::selection { background: var(--of-gold); color: var(--of-void); }
+
+/* ---- the embedded page, screenshots, the info panel ---------------------------- */
+#wrapper .game_frame,
+#wrapper .html_embed_widget {
+    border: 1px solid var(--of-green);
+    border-radius: 0;
+    box-shadow: 0 0 0 4px var(--of-void), 0 0 48px rgba(77, 255, 155, 0.14);
+    transition: box-shadow 200ms;
+}
+#wrapper .game_frame:hover {
+    box-shadow: 0 0 0 4px var(--of-void), 0 0 0 5px var(--of-gold), 0 0 48px rgba(255, 215, 0, 0.12);
+}
+
+#wrapper .screenshot_list img {
+    border: 1px solid var(--of-line);
+    border-radius: 0;
+    transition: border-color 120ms;
+}
+#wrapper .screenshot_list a:hover { background: transparent; }
+#wrapper .screenshot_list a:hover img { border-color: var(--of-green); }
+
+#wrapper .info_panel_wrapper table td {
+    border-color: var(--of-line);
+    padding-top: 7px;
+    padding-bottom: 7px;
+}
+#wrapper .info_panel_wrapper table td:first-child {
+    color: var(--of-dim);
+    font: 9px/1.8 var(--of-pixel);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+#wrapper #view_game_footer {
+    color: var(--of-dim);
+    border-top: 1px solid var(--of-line);
+}
+
+/* ---- quieter where it has to be ------------------------------------------------- */
+@media (max-width: 700px) {
+    #wrapper::before { display: none; }
+    #header::after { animation: none; width: auto; white-space: normal; padding: 7px 12px; }
+    #inner_column { box-shadow: none; }
+    #inner_column::before { font-size: 8px; }
+    #wrapper .formatted_description { font-size: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #wrapper::before,
+    #header::after,
+    #wrapper .formatted_description::after { animation: none; }
+    #header::after { width: auto; white-space: normal; padding: 7px 12px; }
+    #wrapper .button,
+    #wrapper .game_frame { transition: none; }
+    #wrapper .button:hover { transform: none; }
+}

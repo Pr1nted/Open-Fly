@@ -1,5 +1,5 @@
 // The fly's side of a turn, in the browser: game state -> sensory rates, and
-// descending-neuron spikes -> orders. Ports of strategy_fly/encode.py,
+// descending-neuron spikes -> orders. Ports of open_fly/encode.py,
 // decode.choose and players.turn_seed, unchanged in what they compute.
 
 export const MODULES = ["e", "p", "w", "n"];

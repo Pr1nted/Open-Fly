@@ -1,6 +1,6 @@
-"""Strategy Fly Live: the fly plays new games for as long as this runs.
+"""Open Fly Live: the fly plays new games for as long as this runs.
 
-    .venv/bin/python -m strategy_fly.live \
+    .venv/bin/python -m open_fly.live \
         --binary <OpenDoctrinesServer built with the agent-door patch> \
         --game-data <Open Doctrines data/ folder> \
         --fly-data <folder with Completeness_783.csv, Connectivity_783.parquet, neuron_annotations.tsv> \
@@ -167,7 +167,7 @@ def brain_bin(brain, groups, tsv):
 
 def private_data_dir(game_data):
     """data/ with every entry linked except saves/, which is this program's own."""
-    root = os.path.join(tempfile.gettempdir(), "strategy_fly_live_data")
+    root = os.path.join(tempfile.gettempdir(), "open_fly_live_data")
     saves = os.path.join(root, "saves")
     shutil.rmtree(saves, ignore_errors=True)
     os.makedirs(saves, exist_ok=True)
@@ -235,7 +235,7 @@ class LiveFly:
 def game_loop(args, hub, brain, groups, world, data_dir):
     rng = random.Random()
     seats = [s for s in (args.seats.split(",") if args.seats else world.seats(args.min_provinces))]
-    logs = tempfile.mkdtemp(prefix="strategy_fly_live_logs_")
+    logs = tempfile.mkdtemp(prefix="open_fly_live_logs_")
     game_id, last = 0, None
     while True:
         game_id += 1
@@ -395,7 +395,7 @@ def main():
     server = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(hub, assets))
     server.daemon_threads = True
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    print(f"Strategy Fly Live: http://localhost:{args.port}", flush=True)
+    print(f"Open Fly Live: http://localhost:{args.port}", flush=True)
 
     fd = args.fly_data
     brain = FlyBrain(os.path.join(fd, "Completeness_783.csv"), os.path.join(fd, "Connectivity_783.parquet"))
