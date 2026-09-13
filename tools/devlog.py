@@ -110,6 +110,7 @@ def site(entries):
     return f"""<!doctype html>
 <meta charset="utf-8">
 <title>Open Fly devlog</title>
+<link rel="icon" href="../favicon.ico" sizes="16x16 32x32 48x48">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="alternate" type="application/rss+xml" title="Open Fly devlog" href="feed.xml">
 <style>

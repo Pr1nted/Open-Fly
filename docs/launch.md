@@ -105,8 +105,8 @@ The fly is the hook. The game is what we want people to keep.
       with no donate button, no ads on the site, and **no monetisation on the clip**
       (YouTube Partner, TikTok Creator Rewards). A sponsor, a paid tier or selling the
       art would need FlyWire's written permission first.
-- [ ] Consider a courtesy note to the FlyWire team and the model's authors before
-      going public, with a link. It costs nothing, and it is how this becomes
+- [ ] Send the courtesy note to the FlyWire team (draft: `docs/outreach/flywire-courtesy-note.md`),
+      with a working preview link, at least a week before going public. It costs nothing, and it is how this becomes
       "people we cite liked it" instead of "people we cite objected".
 - [ ] Decide whether the Open Fly repository goes public at launch. HN will ask for
       the source.

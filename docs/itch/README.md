@@ -5,6 +5,7 @@ cover.png          630x500, the project cover (upload cover@2x.png: itch downsam
 cover@2x.png       1260x1000
 thumbnail.png      1280x720, the first screenshot, and the social card
 banner.png         1600x500, Edit theme -> Banner
+favicon/           the browser-tab icon: upload favicon-128.png (see 4. Media)
 description.html   paste into the description (switch the editor to HTML first)
 theme.css          Edit theme -> the CSS box
 README.md          this
@@ -74,6 +75,11 @@ and under `prefers-reduced-motion`.
 ## 4. Media
 
 - Cover: `cover@2x.png`.
+- Favicon: **Edit game -> Metadata -> Promo images -> Favicon**, `favicon/favicon-128.png`.
+  Press **Save** before leaving: an unsaved favicon shows on the edit page and then
+  disappears. The icon is a pixel fly on the console void, with the gold top edge
+  from the cover. It is square and opaque, so itch's transparency bugs cannot touch it.
+  `favicon/make_favicon.py` redraws every size from one 16x16 grid.
 - Screenshots: `thumbnail.png` first, then three frames of the live page, taken
   when the fly is at war (the orders panel is busiest). The first screenshot is
   what Discord, Bluesky and X show when someone pastes the link.
