@@ -1,0 +1,69 @@
+Open Fly - data licence and citations
+=====================================
+
+The brain data in this folder is not Open Fly's code. It is derived from the
+FlyWire connectome, and it has its own licence.
+
+  connectome.bin (and its connectome.bin.gz.* parts)   who connects to whom, and how strongly
+  brain.bin                                            neuron positions and classes, for the 3D view
+  brain.json                                           sensory and descending neurons, as indices
+
+LICENCE
+
+  These files are licensed under Creative Commons Attribution-NonCommercial 4.0
+  International (CC BY-NC 4.0): https://creativecommons.org/licenses/by-nc/4.0/
+
+  Source: FlyWire public release 783, https://flywire.ai - Princeton University
+  and collaborators. "FlyWire's public release data is made available under
+  license CC BY-NC 4.0" (https://flywire.ai/guidelines).
+
+  NON-COMMERCIAL. You may copy, share and adapt these files, with credit, for any
+  purpose that is not commercial. Open Fly asks for no money and carries no ads
+  for this reason.
+
+CHANGES MADE (tools/export_web_brain.py and open_fly/live.py)
+
+  - Connectivity_783.parquet and Completeness_783.csv, as prepared from FlyWire 783
+    by Shiu et al. (signed synapse counts, where the sign comes from FlyWire's
+    neurotransmitter predictions), were re-encoded as a binary compressed sparse
+    row table (connectome.bin).
+  - Positions and super classes from flyconnectome/flywire_annotations
+    (Supplemental_file1_neuron_annotations.tsv) were re-encoded for the 3D view
+    (brain.bin).
+  - Descending neurons from the same annotations, and sensory neurons listed in
+    Shiu et al.'s notebooks, were converted to indices. The descending neurons were
+    dealt into the game's 39 action groups (brain.json).
+  - For Cloudflare Pages, the large files are served gzip-compressed and split
+    into parts.
+
+CITATIONS
+
+  Following FlyWire's citation table, for the parts of the data used here:
+
+  Dorkenwald et al. (2024). Neuronal wiring diagram of an adult brain. Nature 634, 124-138.
+    https://doi.org/10.1038/s41586-024-07558-y
+  Schlegel et al. (2024). Whole-brain annotation and multi-connectome cell typing of Drosophila.
+    Nature 634, 139-152. https://doi.org/10.1038/s41586-024-07686-5
+  Zheng et al. (2018). A complete electron microscopy volume of the brain of adult
+    Drosophila melanogaster. Cell 174, 730-743. https://doi.org/10.1016/j.cell.2018.06.019
+  Buhmann et al. (2021). Automatic detection of synaptic partners in a whole-brain
+    Drosophila electron microscopy data set. Nature Methods 18, 771-774.
+    https://doi.org/10.1038/s41592-021-01183-7
+  Heinrich et al. (2018). Synaptic cleft segmentation in non-isotropic volume electron
+    microscopy of the complete Drosophila brain. MICCAI 2018, LNCS 11071, 317-325.
+    https://doi.org/10.1007/978-3-030-00934-2_36
+  Eckstein, Bates et al. (2024). Neurotransmitter classification from electron microscopy
+    images at synaptic sites in Drosophila melanogaster. Cell 187, 2574-2594.
+    https://doi.org/10.1016/j.cell.2024.03.016
+
+  For the annotations (flywire_annotations v3):
+  Matsliah, Yu et al. (2024). Neuronal parts list and wiring diagram for a visual system.
+    Nature 634, 166-180. https://doi.org/10.1038/s41586-024-07981-1
+  Berg et al. (2025). Sexual dimorphism in the complete connectome of the Drosophila male
+    central nervous system. bioRxiv. https://doi.org/10.1101/2025.10.09.680999
+
+  The brain model that runs on this data:
+  Shiu et al. (2024). A Drosophila computational brain model reveals sensorimotor
+    processing. Nature 634, 210-219. https://doi.org/10.1038/s41586-024-07763-9
+    Code: https://github.com/philshiu/Drosophila_brain_model, MIT License,
+    Copyright (c) 2023 Philip Shiu and Nico Spiller.

@@ -76,8 +76,18 @@ setup.
   [philshiu/Drosophila_brain_model](https://github.com/philshiu/Drosophila_brain_model), MIT.
 - Connectome: Dorkenwald et al., "Neuronal wiring diagram of an adult brain",
   *Nature* 634, 124-138 (2024); Schlegel et al., "Whole-brain annotation and
-  multi-connectome cell typing of *Drosophila*", *Nature* 634, 139-152 (2024).
-  No FlyWire data is committed here. The website serves a copy derived from it.
+  multi-connectome cell typing of *Drosophila*", *Nature* 634, 139-152 (2024),
+  and the further papers FlyWire's citation table asks for, listed in
+  [web/data/LICENSE.txt](web/data/LICENSE.txt).
 - Game: Open Doctrines by Pr1nted.
 
-Code is Apache 2.0. See [NOTICE](NOTICE).
+## Licences
+
+- **Code:** Apache 2.0. See [NOTICE](NOTICE).
+- **Brain data:** FlyWire's public release is **CC BY-NC 4.0**, and so is
+  everything the site serves that is derived from it (`connectome.bin`,
+  `brain.bin`, `brain.json`). It may be shared and adapted with credit, but
+  **never used commercially**. That is why Open Fly takes no payments, donations
+  or ads. Details and the list of changes are in
+  [web/data/LICENSE.txt](web/data/LICENSE.txt).
+- **Open Doctrines**, which the page runs, is under its own non-commercial licence.

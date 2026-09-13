@@ -99,12 +99,14 @@
 
   @media (max-width: 900px) {
     .ident p { display: none; }
-    .setup { top: auto; bottom: 90px; left: 12px; width: auto; right: 12px; grid-template-columns: 1fr 1fr; }
+    .setup { top: auto; bottom: 132px; left: 12px; width: auto; right: 12px; grid-template-columns: 1fr 1fr; }
     .setup h2, .setup .note { grid-column: 1 / -1; }
     .rail { display: none; }
     .statusbar { left: 12px; right: 12px; bottom: 12px; grid-template-columns: 1fr; }
     .views { max-width: none; left: 12px; justify-content: flex-start; top: 70px; }
   }
+  .setup .credit { font-size: 11px; line-height: 1.45; padding-top: 8px; border-top: 1px solid var(--glass-edge); }
+  .setup .credit a { color: inherit; }
   @media (prefers-reduced-motion: reduce) { .loading, .bar i b { transition: none; } .live i { animation: none; } }
 </style>
 
@@ -136,6 +138,7 @@
   </label>
   <button type="button" class="go" id="startBtn">Start this game</button>
   <p class="note" id="setupNote">If the fly's country is wiped out, the same game starts again with a new seed.</p>
+  <p class="note credit">Connectome: <a href="https://flywire.ai" target="_blank" rel="noopener">FlyWire</a>, Princeton University and collaborators, <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>, converted for the browser. Brain model: Shiu et al., <i>Nature</i> 2024. <a href="./data/LICENSE.txt" target="_blank" rel="noopener">Data licence and citations</a></p>
 </section>
 
 <nav class="views" aria-label="Camera views">

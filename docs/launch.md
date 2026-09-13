@@ -94,12 +94,17 @@ The fly is the hook. The game is what we want people to keep.
 
 ## Before launch: checklist
 
-- [ ] **FlyWire data terms.** The site serves a derived copy of the v783 connectome
-      (`connectome.bin`, `brain.json`). Read the current FlyWire data licence and
-      citation requirements (flywire.ai, codex.flywire.ai) and the
-      philshiu/Drosophila_brain_model licence. Confirm redistribution of the derived
-      files is allowed, and put the exact required attribution on the page itself,
-      not only in the README.
+- [x] **FlyWire data terms, checked 2026-09-13.** FlyWire's public release (v783) is
+      **CC BY-NC 4.0** (flywire.ai/guidelines; the Zenodo connectivity record says
+      CC BY 4.0, and we follow the stricter one). Redistributing the converted files is
+      allowed with attribution, a licence link and a note that they were changed, and
+      **never commercially**. The credit is on the page, in `web/data/LICENSE.txt`,
+      in `NOTICE` and in the itch description. See the non-commercial rules below.
+- [ ] **Keep every Open Fly surface non-commercial**, which is what CC BY-NC requires
+      and what Open Doctrines' own licence requires too: itch pricing "No payments"
+      with no donate button, no ads on the site, and **no monetisation on the clip**
+      (YouTube Partner, TikTok Creator Rewards). A sponsor, a paid tier or selling the
+      art would need FlyWire's written permission first.
 - [ ] Consider a courtesy note to the FlyWire team and the model's authors before
       going public, with a link. It costs nothing, and it is how this becomes
       "people we cite liked it" instead of "people we cite objected".

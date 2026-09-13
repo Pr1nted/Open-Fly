@@ -12,9 +12,12 @@ Third-party material:
   notebooks of the same repository (MIT).
 - The FlyWire connectome and annotations are not included; they are downloaded
   at run time. Cite the FlyWire papers listed in README.md when using results.
-- The website build derives web/data/connectome.bin and web/data/brain.json from
-  the FlyWire v783 connectome and annotations and from the model repository's
-  files (tools/export_web_brain.py), and serves them. They are built in CI and
-  never committed; the attribution they require is shown on the page.
+- FlyWire data is licensed separately from this code, under CC BY-NC 4.0
+  (https://flywire.ai/guidelines), and so is everything derived from it. That
+  covers web/data/brain.json, committed here, and the connectome.bin and
+  brain.bin the website serves, which are built in CI and never committed. Any
+  use of them must be non-commercial and credit FlyWire. The licence, the
+  changes made and the citations FlyWire asks for are in web/data/LICENSE.txt,
+  which the website serves beside the files.
 - patches/opendoctrines-agent-door.patch modifies Open Doctrines
   (github.com/Pr1nted/Open-Doctrines) under that project's own licence.
