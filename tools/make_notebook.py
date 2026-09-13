@@ -39,8 +39,11 @@ This notebook stops at the first milestone: **the fly plays a full seat.**
 Run all cells in order. Runtime: CPU is enough.
 """)]
 
-cells.append(code("""
-!nproc; free -g | head -2; python3 --version
+# BEFORE the %%writefile cells: %%writefile does not create directories, and
+# the first version of this notebook made them in the build cell, after the
+# files had already failed to write.
+cells.append(code(f"""
+!mkdir -p {PKG}/strategy_fly {PKG}/patches /content/results; nproc; free -g | head -2; python3 --version
 """))
 
 for rel in ["strategy_fly/__init__.py", "strategy_fly/protocol.py", "strategy_fly/driver.py",
