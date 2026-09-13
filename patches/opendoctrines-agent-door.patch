@@ -1,0 +1,78 @@
+diff --color -ru a/src/Game_AITrain.cpp b/src/Game_AITrain.cpp
+--- a/src/Game_AITrain.cpp	2026-09-13 19:34:23.905774763 +0200
++++ b/src/Game_AITrain.cpp	2026-09-13 19:34:23.965911238 +0200
+@@ -2549,6 +2549,7 @@
+     applyFpsTarget(-1);
+     Audio::s_disabled = true;
+ 
++    m_config.aiDifficulty = 3;   // Strategy Fly: match tools/od_bench.py DIFFICULTY
+     startBenchSeat(seatSpec, untilTurn);
+     while (m_loadingPhase != LOAD_NONE && m_loadingPhase != LOAD_DONE) {
+         if (WindowShouldClose()) return false;
+@@ -2646,6 +2647,16 @@
+             }
+             printf("[AGENT] %-8s %s\n", MODS[mod].label, line.c_str());
+         }
++        // ── THE MODEL'S BUDGET, STATED ──
++        //
++        // A difference in score is only a difference in judgement if both
++        // players get the same number of moves. The policy makes up to
++        // agentBudget() picks per module each turn and stops a module when it
++        // picks 0; before this, an agent could send any number of actions and
++        // the comparison measured the budget rather than the player.
++        printf("[AGENT] budget e:%d p:%d w:%d n:%d  (a module also ends when it picks 0)\n",
++               m_ai->agentBudget(cid, 0), m_ai->agentBudget(cid, 1),
++               m_ai->agentBudget(cid, 2), m_ai->agentBudget(cid, 3));
+         printf("[AGENT] waiting\n");
+         fflush(stdout);
+ 
+@@ -2666,6 +2677,8 @@
+         while (!cmds.empty() && (cmds.back() == '\n' || cmds.back() == '\r')) cmds.pop_back();
+         if (cmds == "quit") { printf("[AGENT] stopped early at turn %d\n", m_turnNumber); break; }
+ 
++        int used[4] = {0, 0, 0, 0};
++        bool passed[4] = {false, false, false, false};
+         size_t at = 0;
+         while (at < cmds.size()) {
+             const size_t comma = cmds.find(',', at);
+@@ -2684,6 +2697,20 @@
+                 printf("[AGENT] REFUSED %s: not legal this turn\n", tok.c_str());
+                 continue;
+             }
++            // After the legality check, so a refused token costs nothing -- the
++            // policy only ever picks from the legal set, and would not have
++            // spent a move on it either.
++            if (passed[mod]) {
++                printf("[AGENT] SKIPPED %s: this module already picked 0 this turn\n", tok.c_str());
++                continue;
++            }
++            const int budget = m_ai->agentBudget(cid, mod);
++            if (used[mod] >= budget) {
++                printf("[AGENT] OVER BUDGET %s: %d of %d this turn\n", tok.c_str(), used[mod], budget);
++                continue;
++            }
++            ++used[mod];
++            if (act == 0) passed[mod] = true;
+             printf("[AGENT] did %s -> %s\n", tok.c_str(),
+                    m_ai->agentExec(cid, mod, act).c_str());
+             m_ai->agentRefresh();
+diff --color -ru a/src/ai/AISystem.h b/src/ai/AISystem.h
+--- a/src/ai/AISystem.h	2026-09-13 19:34:23.888212982 +0200
++++ b/src/ai/AISystem.h	2026-09-13 19:34:23.936587130 +0200
+@@ -2153,6 +2153,16 @@
+             default:           return execNavy(cid, action);
+         }
+     }
++    // The policy's own per-turn budget for a module, so a hand-played seat gets
++    // exactly as many picks as the model does: politics keeps its rate limit,
++    // the other three get actionsPerModule(). The same loop in takeTurn also
++    // ends a module the moment it picks action 0, and runBenchAgent applies
++    // that rule too -- a budget without it would let an agent pass and then
++    // act again, which the model cannot do.
++    int agentBudget(int cid, int module) const {
++        return module == MOD_POLITICS ? ACTIONS_PER_MODULE_PER_TURN
++                                      : actionsPerModule(cid);
++    }
+ private:
+ public:
+     // Decide + enqueue this country's orders through the same pending-order

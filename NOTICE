@@ -1,0 +1,16 @@
+Strategy Fly
+Copyright 2026 Pr1nted
+
+Code in this repository is licensed under the Apache License 2.0 (LICENSE).
+
+Third-party material:
+
+- strategy_fly/brain.py reproduces the neuron and synapse equations and
+  constants of model.py from philshiu/Drosophila_brain_model,
+  Copyright (c) 2023 Philip Shiu and Nico Spiller, licensed under the MIT License.
+- strategy_fly/sensory_ids.json lists FlyWire neuron ids taken from the
+  notebooks of the same repository (MIT).
+- The FlyWire connectome and annotations are not included; they are downloaded
+  at run time. Cite the FlyWire papers listed in README.md when using results.
+- patches/opendoctrines-agent-door.patch modifies Open Doctrines
+  (github.com/Pr1nted/Open-Doctrines) under that project's own licence.
