@@ -70,7 +70,11 @@ if git apply --reverse --check {PKG}/patches/opendoctrines-agent-door.patch 2>/d
 else
   git apply -p1 {PKG}/patches/opendoctrines-agent-door.patch && echo "patch applied"
 fi
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release > /content/results/cmake-configure.log
+# -include cstdint: Colab builds with GCC 13, which no longer brings <cstdint> in
+# through <string> or <algorithm>. Open Doctrines headers that use uint8_t without
+# including it built on CI (GCC 11) and stop here. Force-including it fixes the whole
+# class at once and changes nothing about what the game does.
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-include cstdint" > /content/results/cmake-configure.log
 time cmake --build build --target OpenDoctrinesServer -j"$(nproc)" > /content/results/cmake-build.log
 ls -la build/OpenDoctrinesServer
 """))
