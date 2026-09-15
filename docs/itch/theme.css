@@ -416,3 +416,129 @@
     #wrapper .game_frame { transition: none; }
     #wrapper .button:hover { transform: none; }
 }
+
+/* ---- the devlog, which the rest of this file never reached --------------------
+   itch renders devlogs from a different family of widgets than the project page:
+   .game_devlog_post_page and .game_devlog_page, with the text in
+   section.user_formatted.post_body -- NOT .formatted_description, which does not
+   exist on these pages at all. So nothing above matched, and the posts fell through
+   to itch's light-theme defaults: #222 on #06120d, black on black.
+
+   Measured on the live page 2026-09-15, and every value below was checked by
+   injecting these rules and re-reading the computed style, because whether a
+   selector beats itch's own cascade is not knowable by reading.
+
+   The font comes from #inner_column.family_lato, which beats #wrapper by proximity,
+   so it is overridden here rather than on the wrapper. */
+#wrapper .game_devlog_post_page,
+#wrapper .game_devlog_page,
+#wrapper .post_body,
+#wrapper .post_preview {
+    color: var(--of-text);
+    font-family: var(--of-mono);
+}
+
+#wrapper .post_body p,
+#wrapper .post_preview p {
+    color: var(--of-text);
+    font-family: var(--of-mono);
+    font-size: 15px;
+    line-height: 1.75;
+}
+
+/* The post title. itch puts it in a bare h1 with no class, so it is scoped by the
+   page instead. Verified: gold, Press Start 2P. */
+#wrapper .game_devlog_post_page h1,
+#wrapper .game_devlog_page h1 {
+    color: var(--of-gold);
+    font-family: var(--of-pixel);
+    font-size: 15px;
+    line-height: 1.7;
+    letter-spacing: 0.02em;
+    text-wrap: balance;
+}
+
+#wrapper .game_devlog_post_page h1::before {
+    content: "> ";
+    color: var(--of-dim);
+}
+
+/* The listing's byline -- "September 15, 2026 by Pr1nted". The only text on the
+   index still at #222: the row and the bare span and abbr inside it have no class
+   of their own to hang off. The summary and "Continue reading" are already green
+   from #wrapper a:not(.button), so they are left alone.
+
+   There is deliberately NO rule for a listing title here: .post_preview holds only
+   .meta_row and a.summary_link. itch's devlog index shows the date, the author and
+   an excerpt, never the post's title, so a heading rule would style nothing. */
+#wrapper .post_preview .meta_row,
+#wrapper .post_preview .meta_row span,
+#wrapper .post_preview .meta_row abbr {
+    color: var(--of-dim);
+    font-family: var(--of-mono);
+}
+
+/* Headings INSIDE a post, for future entries. The first one is all <p>: itch's
+   editor flattened the draft's bold and headings on paste. */
+#wrapper .post_body h2,
+#wrapper .post_body h3 {
+    margin: 2em 0 0.7em;
+    padding-bottom: 7px;
+    border-bottom: 1px dashed var(--of-line);
+    color: var(--of-gold);
+    font: 12px/1.7 var(--of-pixel);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+#wrapper .post_body strong { color: var(--of-white); }
+#wrapper .post_body ul { padding-left: 0; list-style: none; }
+#wrapper .post_body li { padding-left: 2.2ch; text-indent: -2.2ch; }
+#wrapper .post_body li::before { content: "> "; color: var(--of-green); }
+
+#wrapper .post_body code,
+#wrapper .post_body pre {
+    background: var(--of-void);
+    border: 1px solid var(--of-line);
+    border-radius: 0;
+    color: var(--of-green);
+    font-family: var(--of-mono);
+}
+#wrapper .post_body code { padding: 1px 5px; }
+#wrapper .post_body pre { padding: 12px 14px; overflow-x: auto; line-height: 1.5; }
+
+#wrapper .post_body blockquote {
+    margin: 1.4em 0;
+    padding: 4px 0 4px 16px;
+    border-left: 2px solid var(--of-gold);
+    color: var(--of-white);
+}
+
+/* The furniture around a post. Verified --of-dim after injection. */
+#wrapper .breadcrumbs,
+#wrapper .breadcrumbs a,
+#wrapper .post_meta,
+#wrapper .post_date,
+#wrapper .post_author {
+    color: var(--of-dim);
+    font-family: var(--of-mono);
+}
+
+/* hr came out #808080, the one grey on an otherwise green page. */
+#wrapper .game_devlog_post_page hr,
+#wrapper .game_devlog_page hr,
+#wrapper .post_body hr {
+    border: 0;
+    border-top: 1px dashed var(--of-line);
+}
+
+/* NOT TOUCHED, on purpose, and both were nearly "fixed" by mistake:
+
+   .devlog_link -- the li computes #222, but its only child is a.action_btn at
+   rgb(238,238,238), and the li holds no text of its own. Styling it changes
+   nothing visible.
+
+   .action_btn's full_label/mobile_label pair -- reading textContent concatenates
+   both and looks like duplicated text ("Add To CollectionCollection"), but
+   full_label computes display:none at narrow widths. It is itch's own responsive
+   labelling, and hiding .mobile_label would break the buttons on a phone. */
