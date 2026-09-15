@@ -50,6 +50,24 @@ for (;;) {
   orders += JSON.parse(play(tokens.join(","))).filter((m) => m.outcome === "did" && !m.token.endsWith(":0")).length;
   if (endTurn() !== 1) { last = JSON.parse(position(0)); break; }
 }
+// `last.turn` IS the count. This has now been "fixed" twice from reading the
+// loop instead of running it, so the evidence lives here.
+//
+// p.turn is zero-based -- Game.h has `m_turnNumber = 0`, incremented at the END
+// of processTurn -- which makes it look one short. It is not, because of where
+// each exit sits relative to the work:
+//
+//   normal end  od_agent_end_turn returns !agentOver(), so the iteration that
+//               plays turn N-1 leaves m_turnNumber == N and exits. last.turn is
+//               N, and N turns ran.
+//   wiped out   the break is BEFORE brain.runWindow, so the turn named by
+//               p.turn contributes no spikes and no orders. last.turn is the
+//               number of turns that did.
+//
+// Measured, not argued: with a counter next to runWindow, --turns 5 gives 5 and
+// --turns 12 gives 12, and the 1914:SWE wipeout gives 47 iterations to 46 brain
+// turns with last.turn == 46. It divides dn_spikes_per_turn below, so an
+// off-by-one "correction" here silently restates a published figure.
 const played = Math.max(1, last.turn);
 const result = {
   open_doctrines: (() => { try { return readFileSync(path.join(web, "agent", "VERSION"), "utf8").trim(); } catch { return "unknown"; } })(),
