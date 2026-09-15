@@ -38,11 +38,6 @@ on:
 
 permissions:
   contents: write
-  # The devlog is published to GitHub Pages: itch has no devlog API and its
-  # player runs in a sandboxed frame, so the entries and the RSS feed need a
-  # home of their own. Only web/devlog/ is published, never the game.
-  pages: write
-  id-token: write
 
 concurrency:
   group: follow-open-doctrines
@@ -219,37 +214,3 @@ jobs:
             cat release/itch-devlog.md
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-
-  # ── THE DEVLOG, ON ITS OWN PAGES SITE ──
-  #
-  # Runs after `release` has committed web/devlog/ back to main, and checks main
-  # out again to get it. Only that folder is uploaded: the game is 88 MB and
-  # lives on itch, and its data files are not in the repository at all.
-  devlog-pages:
-    # No `if:` here on purpose. `needs.check` is not in scope for this job,
-    # so a condition naming it resolves empty and the job would never run.
-    # It needs none: release only runs when check says build, and a skipped
-    # `needs` skips this too.
-    needs: release
-    runs-on: ubuntu-22.04
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: main
-      - name: Is there a devlog to publish?
-        id: has
-        run: |
-          if [ -f web/devlog/index.html ]; then echo "ok=true" >> "$GITHUB_OUTPUT"
-          else echo "ok=false" >> "$GITHUB_OUTPUT"; echo "::warning title=No devlog::web/devlog/index.html is not there; nothing published."; fi
-      - uses: actions/configure-pages@v5
-        if: steps.has.outputs.ok == 'true'
-      - uses: actions/upload-pages-artifact@v3
-        if: steps.has.outputs.ok == 'true'
-        with:
-          path: web/devlog
-      - id: deploy
-        if: steps.has.outputs.ok == 'true'
-        uses: actions/deploy-pages@v4

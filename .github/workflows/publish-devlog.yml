@@ -1,0 +1,58 @@
+# Publish the devlog to GitHub Pages.
+#
+# WHY ITS OWN WORKFLOW, AND NOT A JOB IN follow-open-doctrines.yml
+#
+# The release run COMMITS web/devlog/ back to main, so a publisher watching that
+# path fires on its own the moment the devlog changes -- including when it is
+# edited by hand, which a release-only job would never notice. It also avoids a
+# 30-minute rebuild to republish three kilobytes.
+#
+# Only web/devlog/ is uploaded. The game itself is ~88 MB, lives on itch.io, and
+# its data files are not in this repository at all.
+#
+# One publisher, deliberately: two workflows deploying to the same github-pages
+# environment race each other.
+name: Publish devlog
+
+on:
+  push:
+    branches: [main]
+    paths: ["web/devlog/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never cancel a deploy in flight: a half-published site is worse than a late one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Is there a devlog to publish?
+        id: has
+        run: |
+          if [ -f web/devlog/index.html ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=No devlog::web/devlog/index.html is not there; nothing published."
+          fi
+      - uses: actions/configure-pages@v5
+        if: steps.has.outputs.ok == 'true'
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.has.outputs.ok == 'true'
+        with:
+          path: web/devlog
+      - id: deploy
+        if: steps.has.outputs.ok == 'true'
+        uses: actions/deploy-pages@v4
