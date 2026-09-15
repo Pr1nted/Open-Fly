@@ -1,4 +1,4 @@
-"""Cut files too big for Cloudflare Pages into gzip parts the page reassembles.
+"""Cut files too big for a static host into parts the page reassembles.
 
     python3 tools/pack_web.py web/data/connectome.bin web/agent/OpenDoctrinesAgent.data
 
@@ -18,9 +18,18 @@ import os
 import sys
 
 
-def pack(path, part_bytes):
+def pack(path, part_bytes, compress=True):
     raw = open(path, "rb").read()
-    blob = gzip.compress(raw, compresslevel=9, mtime=0)
+    # --no-gzip stores the bytes plain. NOT a size decision -- a correctness
+    # one. A gzip stream cut into parts has structure: only part .000 carries
+    # the header, so a host that re-encodes inflates that part and passes the
+    # rest through, and the pieces no longer fit together. itch.io does this,
+    # by content rather than by extension, so renaming the parts did not stop
+    # it: the page assembled 58,539,143 bytes of a 91,106,470-byte file.
+    # Plain parts have no such asymmetry -- a host may gzip them in transit,
+    # the browser hands back exactly the bytes that were sent, and the join
+    # still reconstructs the file.
+    blob = gzip.compress(raw, compresslevel=9, mtime=0) if compress else raw
     folder, name = os.path.split(path)
     stem = name.rsplit(".", 1)[0]
     for old in os.listdir(folder or "."):
@@ -38,10 +47,11 @@ def pack(path, part_bytes):
             f.write(blob[at:at + part_bytes])
         parts.append(part)
     manifest = {"name": name, "size": len(raw), "sha256": hashlib.sha256(raw).hexdigest(),
-                "gzip": True, "compressed": len(blob), "parts": parts}
+                "gzip": compress, "compressed": len(blob), "parts": parts}
     with open(os.path.join(folder, f"{stem}.pack.json"), "w") as f:
         json.dump(manifest, f, indent=1)
-    print(f"{name}: {len(raw) / 1e6:.1f} MB -> {len(blob) / 1e6:.1f} MB gzip in {len(parts)} part(s)")
+    how = "gzip" if compress else "plain"
+    print(f"{name}: {len(raw) / 1e6:.1f} MB -> {len(blob) / 1e6:.1f} MB {how} in {len(parts)} part(s)")
     return manifest
 
 
@@ -49,12 +59,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("files", nargs="+")
     ap.add_argument("--part-mib", type=float, default=20.0)
+    ap.add_argument("--no-gzip", action="store_true",
+                    help="store the parts uncompressed; safe on a host that re-encodes")
     args = ap.parse_args()
     part_bytes = int(args.part_mib * 1024 * 1024)
     if part_bytes >= 25 * 1024 * 1024:
         sys.exit("--part-mib must stay under Cloudflare Pages' 25 MiB file limit")
     for f in args.files:
-        pack(f, part_bytes)
+        pack(f, part_bytes, compress=not args.no_gzip)
 
 
 if __name__ == "__main__":

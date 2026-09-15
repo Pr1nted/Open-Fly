@@ -133,9 +133,14 @@ jobs:
         env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
         run: python3 tools/devlog.py --tag "$TAG" --run release/run.json
 
-      - name: Pack for Pages and stage
+      - name: Pack and stage
+        # --no-gzip is a CORRECTNESS flag, not a size one. itch.io re-encodes
+        # by content, so a gzip stream cut into parts arrives with only part
+        # .000 inflated and the rest raw -- 58,539,143 bytes of a 91,106,470
+        # byte file. Plain parts survive that: the host may gzip them in
+        # transit and the browser hands back the same bytes.
         run: |
-          python3 tools/pack_web.py web/data/connectome.bin web/agent/OpenDoctrinesAgent.data
+          python3 tools/pack_web.py --no-gzip web/data/connectome.bin web/agent/OpenDoctrinesAgent.data
           python3 tools/stage_web.py --out dist
 
       - name: Keep the build
