@@ -1,9 +1,9 @@
 """Build notebooks/open_fly_colab.ipynb from the package sources.
 
-The notebook is self-contained so it can be uploaded to Colab without giving
-Colab access to this private repository: every package file and the Open
-Doctrines patch are written out by %%writefile cells generated from the repo,
-which stays the one source of truth.
+The notebook is self-contained so it can be uploaded to Colab and run without
+cloning this repository at all: every package file and the Open Doctrines
+patch are written out by %%writefile cells generated from the repo, which
+stays the one source of truth.
 """
 import json
 from pathlib import Path

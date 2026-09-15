@@ -60,9 +60,10 @@ When the fly itself changes (brain, page, encoder), run the workflow by hand wit
 
 ## Costs
 
-The repository is private, so Actions minutes count. The poll is a few seconds,
-four times a day, so about 120 billed minutes a month. A release run takes 20-40
-minutes: the Emscripten build, the brain export, then 120 turns of the fly.
+The repository is public, so Actions minutes on the standard runners are free.
+The timings still buy wall-clock rather than money: the poll is a few seconds,
+four times a day, and a release run takes 20-40 minutes -- the Emscripten build,
+the brain export, then 120 turns of the fly.
 
 ## When it breaks
 

@@ -26,8 +26,8 @@
      - No new HTML except inside the description, and itch strips classes there.
        Every effect below hangs off ::before/::after of elements itch renders.
      - No JavaScript: keyframes and gradients only.
-     - No images from this repository: it is private, and jsDelivr cannot serve
-       a private repo. Nothing below needs one.
+     - No images from this repository: jsDelivr could serve them now the
+       repo is public, but nothing below needs one.
 
    SELECTORS are itch's internal names (checked against the Open Doctrines page
    on 2026-08-14) and they move. If an effect is missing, querySelectorAll the

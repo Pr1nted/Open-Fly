@@ -33,7 +33,7 @@ up in advance. Publishing is one switch.
 | Release status | Released. It does what it says. "Prototype" undersells a finished page. |
 | Pricing | **No payments**, and no donations. The connectome is CC BY-NC 4.0, so nothing on this page may ask for money (see `web/data/LICENSE.txt`). |
 | Genre | Simulation |
-| Tags | `simulation`, `grand-strategy`, `neuroscience`, `artificial-life`, `zero-player`, `science`, `experimental`, `strategy`, `psychological-horror`, `browser` (the horror tag is the description's joke; itch allows 10 tags, so it replaced `open-source` while the repository is private) |
+| Tags | `simulation`, `grand-strategy`, `neuroscience`, `artificial-life`, `zero-player`, `science`, `experimental`, `strategy`, `psychological-horror`, `browser` (the horror tag is the description's joke; itch allows 10 tags, so it took `open-source`'s place while the repository was private. It is public now, so `open-source` is free again -- swap it back in for whichever of these you mind least) |
 | AI generation disclosure | **AI Assisted: Code.** The code was written with AI help. The art, text and brain are not generated: the brain is a spiking simulation, and the art is a Blender render. |
 | Community | Comments on. The science questions are the best part. |
 | Visibility | **Draft** until launch |
