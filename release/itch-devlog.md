@@ -1,0 +1,8 @@
+Open Fly now plays Open Doctrines v1.2.1a
+
+Open Doctrines v1.2.1a is out, and the simulated fruit fly brain -- the FlyWire connectome, 138,639 neurons -- is playing it now, in the browser.
+
+As Free Republic of Sweden in 1914 (seed 20260801), the fly started with 1.05% of the world and was wiped out on turn 52, after 39 turns at war. It gave 270 orders, from an average of 401 descending-neuron spikes a turn. This is the first version the fly has played, so there is nothing to compare it with yet.
+
+Watch it play: https://open-fly.pages.dev/
+What changed in Open Doctrines v1.2.1a: https://github.com/Pr1nted/Open-Doctrines/releases/tag/v1.2.1a
