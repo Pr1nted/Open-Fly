@@ -149,7 +149,13 @@ jobs:
           retention-days: 14
 
       - name: Deploy to Cloudflare Pages
-        if: env.PUBLISH == 'true'
+        # OFF unless the OPEN_FLY_PAGES variable is 'true'. Open Fly ships on
+        # itch.io, and a Cloudflare Pages project is optional. Without one,
+        # wrangler fails with project-not-found -- and because this is a plain
+        # `run:`, that failure fails the JOB and takes the itch push, the
+        # Discord post and the commit-back with it, none of which have anything
+        # to do with Pages. Set OPEN_FLY_PAGES=true to turn it back on.
+        if: env.PUBLISH == 'true' && vars.OPEN_FLY_PAGES == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
