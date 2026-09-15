@@ -20,11 +20,17 @@ import html
 import json
 import os
 import re
+import shutil
 import urllib.request
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-PLAY_URL = "https://open-fly.pages.dev/"
-ITCH_URL = "https://pr1nted.itch.io/open-fly"
+# Where you watch it. The game ships on itch.io; there is no Pages site.
+PLAY_URL = "https://pr1nted.itch.io/open-fly"
+ITCH_URL = PLAY_URL
+# Where the devlog lives: its own GitHub Pages site. itch has no devlog API
+# and its player runs in a sandboxed frame, so neither these pages nor the
+# RSS feed can be addressed there -- they need a home of their own.
+DEVLOG_URL = "https://pr1nted.github.io/Open-Fly/"
 OD_REPO = "Pr1nted/Open-Doctrines"
 
 
@@ -74,7 +80,7 @@ def compare(run, previous):
 def render_markdown(entry):
     return (f"---\ntitle: {entry['title']}\ndate: {entry['date']}\ntag: {entry['tag']}\n---\n\n"
             f"{entry['lead']}\n\n## What the fly did\n\n{entry['did']}\n\n{entry['compare']}\n\n"
-            f"## Links\n\n- Watch it play: {PLAY_URL}\n- Open Fly on itch.io: {ITCH_URL}\n"
+            f"## Links\n\n- Watch it play: {PLAY_URL}\n- This devlog: {DEVLOG_URL}\n"
             f"- What changed in Open Doctrines {entry['tag']}: {entry['od_url']}\n")
 
 
@@ -110,7 +116,7 @@ def site(entries):
     return f"""<!doctype html>
 <meta charset="utf-8">
 <title>Open Fly devlog</title>
-<link rel="icon" href="../favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="alternate" type="application/rss+xml" title="Open Fly devlog" href="feed.xml">
 <style>
@@ -134,7 +140,7 @@ def site(entries):
 <main>
   <div class="bar">&#9608; OPEN-FLY // DEVLOG</div>
   <h1>Open <span>Fly</span> devlog</h1>
-  <p class="sub">Every time Open Doctrines releases, the fly plays the new version and writes here. <a href="../">Watch it play</a> &middot; <a href="feed.xml">RSS</a></p>
+  <p class="sub">Every time Open Doctrines releases, the fly plays the new version and writes here. <a href="{PLAY_URL}">Watch it play</a> &middot; <a href="feed.xml">RSS</a></p>
   {items or "<p>No entries yet.</p>"}
 </main>
 """
@@ -142,13 +148,13 @@ def site(entries):
 
 def feed(entries):
     items = "".join(
-        f"<item><title>{html.escape(e['title'])}</title><link>{PLAY_URL}devlog/#{html.escape(e['tag'])}</link>"
-        f"<guid>{PLAY_URL}devlog/#{html.escape(e['tag'])}</guid>"
+        f"<item><title>{html.escape(e['title'])}</title><link>{DEVLOG_URL}#{html.escape(e['tag'])}</link>"
+        f"<guid>{DEVLOG_URL}#{html.escape(e['tag'])}</guid>"
         f"<pubDate>{dt.datetime.strptime(e['date'], '%Y-%m-%d').strftime('%a, %d %b %Y 00:00:00 +0000')}</pubDate>"
         f"<description>{html.escape(e['lead'])}</description></item>"
         for e in entries)
     return (f'<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Open Fly devlog</title>'
-            f"<link>{PLAY_URL}devlog/</link><description>A fruit fly brain plays each new Open Doctrines release.</description>{items}</channel></rss>\n")
+            f"<link>{DEVLOG_URL}</link><description>A fruit fly brain plays each new Open Doctrines release.</description>{items}</channel></rss>\n")
 
 
 def main():
@@ -190,12 +196,16 @@ def main():
     os.makedirs(os.path.join(ROOT, "web", "devlog"), exist_ok=True)
     open(os.path.join(ROOT, "web", "devlog", "index.html"), "w").write(site(entries))
     open(os.path.join(ROOT, "web", "devlog", "feed.xml"), "w").write(feed(entries))
+    # The page is served on its own now, so it carries its own icon rather
+    # than reaching up a directory to the game's.
+    shutil.copy2(os.path.join(ROOT, "web", "favicon.ico"),
+                 os.path.join(ROOT, "web", "devlog", "favicon.ico"))
 
     itch = (f"{entry['title']}\n\n{entry['lead']}\n\n{entry['did']} {entry['compare']}\n\n"
             f"Watch it play: {PLAY_URL}\nWhat changed in Open Doctrines {args.tag}: {od_url}\n")
     open(os.path.join(ROOT, "release", "itch-devlog.md"), "w").write(itch)
     json.dump({"username": "Open Fly",
-               "embeds": [{"title": entry["title"], "url": f"{PLAY_URL}devlog/#{args.tag}",
+               "embeds": [{"title": entry["title"], "url": f"{DEVLOG_URL}#{args.tag}",
                            "description": f"{entry['lead']}\n\n{entry['did']}", "color": 0x4DFF9B,
                            "fields": [{"name": "Watch it play", "value": PLAY_URL, "inline": True},
                                       {"name": f"Open Doctrines {args.tag}", "value": od_url, "inline": True}]}]},
