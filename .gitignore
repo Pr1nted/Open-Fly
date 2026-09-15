@@ -14,6 +14,7 @@ Completeness_*.csv
 .venv/
 # Packed for Pages by tools/pack_web.py, and the deploy folder tools/stage_web.py fills.
 /web/data/*.gz.*
+/web/data/*.part.*
 /web/data/*.pack.json
 /dist/
 # Written by each release run; history.json keeps what matters from them.

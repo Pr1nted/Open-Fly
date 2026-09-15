@@ -4,7 +4,7 @@ Open Fly - data licence and citations
 The brain data in this folder is not Open Fly's code. It is derived from the
 FlyWire connectome, and it has its own licence.
 
-  connectome.bin (and its connectome.bin.gz.* parts)   who connects to whom, and how strongly
+  connectome.bin (and its connectome.bin.part.* parts) who connects to whom, and how strongly
   brain.bin                                            neuron positions and classes, for the 3D view
   brain.json                                           sensory and descending neurons, as indices
 

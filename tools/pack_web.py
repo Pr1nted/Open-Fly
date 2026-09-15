@@ -2,7 +2,7 @@
 
     python3 tools/pack_web.py web/data/connectome.bin web/agent/OpenDoctrinesAgent.data
 
-For each file F this writes F.gz.000, F.gz.001, ... (each under --part-mib,
+For each file F this writes F.part.000, F.part.001, ... (each under --part-mib,
 default 20 MiB against Pages' 25 MiB limit) and F's manifest, named
 <stem>.pack.json beside it, which web/packed.js reads. The original stays on disk
 for local tools; tools/stage_web.py leaves it out of what gets deployed.
@@ -24,11 +24,16 @@ def pack(path, part_bytes):
     folder, name = os.path.split(path)
     stem = name.rsplit(".", 1)[0]
     for old in os.listdir(folder or "."):
-        if old.startswith(name + ".gz."):
+        if old.startswith(name + ".part.") or old.startswith(name + ".gz."):
             os.remove(os.path.join(folder, old))
     parts = []
     for k, at in enumerate(range(0, len(blob), part_bytes)):
-        part = f"{name}.gz.{k:03d}"
+        # NOT ".gz". A static host that sees a .gz extension may serve the
+        # part with Content-Encoding: gzip, and the browser then inflates it
+        # before packed.js gets a byte -- which broke the itch.io upload:
+        # progress ran to 194% and DecompressionStream choked on already-
+        # inflated input. An extension no host recognises cannot be re-encoded.
+        part = f"{name}.part.{k:03d}"
         with open(os.path.join(folder, part), "wb") as f:
             f.write(blob[at:at + part_bytes])
         parts.append(part)
