@@ -7,7 +7,10 @@ thumbnail.png      1280x720, the first screenshot, and the social card
 banner.png         1600x500, Edit theme -> Banner
 favicon/           the browser-tab icon: upload favicon-128.png (see 4. Media)
 description.html   paste into the description (switch the editor to HTML first)
-theme.css          Edit theme -> the CSS box
+theme.css          the source, fully commented -- edit this one
+theme.min.css      Edit theme -> the CSS box. Paste THIS one: 10.6 KB
+                   against the source's 19.5 KB, regenerated with
+                   tools/minify_css.py after any change to theme.css
 README.md          this
 ```
 

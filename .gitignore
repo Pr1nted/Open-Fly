@@ -20,3 +20,8 @@ Completeness_*.csv
 # Written by each release run; history.json keeps what matters from them.
 /release/run.json
 /release/discord.json
+
+# macOS and stray captures. The repository is public now, so a screenshot
+# dropped in the root is one `git add -A` away from being published.
+.DS_Store
+/Screenshot*.png
