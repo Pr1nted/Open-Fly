@@ -100,12 +100,78 @@
   .loading p { margin: 0; color: var(--muted); font: 400 12.5px var(--mono); max-width: 480px; }
   .loading .err { color: #F3A396; }
 
+  /* ── THE ONE ASK, AT THE ONLY MOMENT IT IS EARNED ──
+   *
+   * A post that did 32,000 views on 16 Sep 2026 sent 141 people to this page
+   * and about 97 of them watched a fly run a country. Open Doctrines, the game
+   * the post was about, saw no measurable lift at all: its graphs are flat
+   * through that day while this page's are a cliff. People arrived, enjoyed it,
+   * and left, because nothing here ever handed them the game.
+   *
+   * So this appears when a run ENDS -- the fly wiped out, or its 120 turns
+   * done -- and not before. That is the moment somebody has just spent five
+   * minutes watching and has nothing else to do. It is not a banner, it does
+   * not cover the room, and it never appears during a game.
+   *
+   * IT STAYS once shown. The between-games pause is eight seconds; a card that
+   * left with it would be missed by exactly the people who are about to close
+   * the tab, who are the people it is for.
+   *
+   * NOT IN THE RAIL, which is display:none under 900px. A card only the
+   * desktop saw would miss the share of that Reddit traffic reading on a
+   * phone. */
+  .pitch { position: fixed; right: 20px; bottom: 96px; width: 300px; border-radius: 14px;
+           padding: 14px 16px; display: none; gap: 8px; z-index: 4; }
+  .pitch[data-show="true"] { display: grid; }
+  .pitch strong { font: 800 19px/1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; color: var(--amber); }
+  .pitch p { margin: 0; font-size: 13px; color: var(--muted); }
+  .pitch a { display: block; text-align: center; padding: 9px 12px; border-radius: 8px;
+             background: var(--amber); color: #14100A; font-weight: 700; font-size: 13.5px;
+             text-decoration: none; }
+  .pitch a:hover { background: #F7C766; }
+  .pitch small { font-size: 11.5px; color: var(--muted); text-align: center; }
+  .pitch button { background: none; border: 0; color: var(--muted); font: inherit; font-size: 11.5px;
+                  cursor: pointer; padding: 0; text-align: center; }
+  .pitch button:hover { color: var(--paper); }
+
+  /* ── THE MENU HAS TO GET OUT OF THE WAY ──
+   *
+   * On a phone the rail is gone and this panel sat across the bottom third of
+   * the screen for the whole session, so what was left of a 3D room built to
+   * be looked around was a strip between the panel and the camera buttons.
+   * The panel is called "the next game": it is optional, and the room is the
+   * thing people came for.
+   *
+   * So it folds, and on a phone it starts folded. The heading is the control,
+   * because a heading somebody can already see costs no space and a separate
+   * button would. Hiding the children rather than wrapping them keeps the
+   * two-column grid below intact. */
+  .fold { all: unset; cursor: pointer; display: flex; width: 100%; align-items: center;
+          justify-content: space-between; gap: 10px; font: inherit; color: inherit;
+          letter-spacing: inherit; text-transform: inherit; }
+  .fold i { font-style: normal; font-family: var(--mono); font-size: 14px; line-height: 1;
+            color: var(--muted); }
+  .fold:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; border-radius: 4px; }
+  .setup[data-open="false"] > *:not(h2) { display: none; }
+  .setup[data-open="false"] { padding-bottom: 12px; }
+
   @media (max-width: 900px) {
     .ident p { display: none; }
-    .setup { top: auto; bottom: 132px; left: 12px; width: auto; right: 12px; grid-template-columns: 1fr 1fr; }
-    .setup h2, .setup .note { grid-column: 1 / -1; }
-    .rail { display: none; }
+    /* The bottom of a phone, stacked: status bar, then the folded menu, then
+     * the ask when a run ends. Each clears the one below it. */
     .statusbar { left: 12px; right: 12px; bottom: 12px; grid-template-columns: 1fr; }
+    /* MEASURED, NOT GUESSED. The first version put the menu at a hand-picked
+     * 72px and it landed underneath the status bar, which is 117px tall on a
+     * phone because it stacks into one column and carries the spark chart.
+     * --barH and --setupH are written from the real boxes after layout, so
+     * this stack cannot drift when either of them changes. */
+    .setup { top: auto; bottom: calc(var(--barH, 117px) + 24px); left: 12px; width: auto; right: 12px;
+             grid-template-columns: 1fr 1fr;
+             max-height: calc(100vh - var(--barH, 117px) - 190px); overflow-y: auto; }
+    .setup h2, .setup .note { grid-column: 1 / -1; }
+    .pitch { left: 12px; right: 12px; width: auto;
+             bottom: calc(var(--barH, 117px) + var(--setupH, 42px) + 34px); }
+    .rail { display: none; }
     .views { max-width: none; left: 12px; justify-content: flex-start; top: 70px; }
   }
   .setup .credit { font-size: 11px; line-height: 1.45; padding-top: 8px; border-top: 1px solid var(--glass-edge); }
@@ -120,8 +186,8 @@
   <p>A simulated fruit fly brain &mdash; the FlyWire connectome, 138,639 neurons &mdash; playing Open Doctrines. Both run here, in your browser: every order comes from spikes computed on this machine.</p>
 </header>
 
-<section class="setup glass" aria-label="Game setup">
-  <h2>The next game</h2>
+<section class="setup glass" id="setup" data-open="true" aria-label="Game setup">
+  <h2><button type="button" class="fold" id="setupFold" aria-expanded="true" aria-controls="setup">The next game<i aria-hidden="true">&minus;</i></button></h2>
   <label>Map
     <select id="mapSelect"><option>Loading maps&hellip;</option></select>
   </label>
@@ -182,6 +248,14 @@
     <h2>Its record</h2>
     <ul class="record" id="record"><li><span class="empty">No finished games yet</span></li></ul>
   </section>
+</aside>
+
+<aside class="pitch glass" id="pitch">
+  <strong id="pitchTitle">The fly is bad at this</strong>
+  <p id="pitchLine">You would probably do better.</p>
+  <a href="https://pr1nted.itch.io/open-doctrines" id="pitchLink">Play Open Doctrines</a>
+  <small>Free, in a browser, no account.</small>
+  <button type="button" id="pitchHide">Not now</button>
 </aside>
 
 <div class="statusbar glass">
@@ -449,6 +523,71 @@ function showRecord() {
     return `<li><span class="iso">${esc(r.iso)}</span><span class="how">${r.start.toFixed(2)}% → ${r.end.toFixed(2)}%</span><span class="${d >= 0 ? "up" : "down"}">${d >= 0 ? "+" : ""}${d.toFixed(2)}</span></li>`;
   }).join("");
 }
+/**
+ * The ask, built from what just happened rather than written in advance.
+ *
+ * It names the country and the turn it died on, because "the fly lost Mexico
+ * on turn 31" is a thing the viewer just watched and "try our game" is not.
+ * Dismissal is remembered, so nobody is asked twice; localStorage can throw in
+ * a private tab, hence the try/catch and the plain default of asking.
+ */
+/**
+ * Folding the setup panel, and starting folded on a phone.
+ *
+ * `matchMedia` rather than a width read, so a phone rotated into landscape
+ * unfolds it and a desktop window dragged narrow folds it -- the panel follows
+ * the same breakpoint the stylesheet uses instead of a second opinion about
+ * what counts as small. Only while the viewer has not touched it: once they
+ * fold or unfold it by hand, that is their decision and the resize stops
+ * overriding it.
+ */
+const narrow = matchMedia("(max-width: 900px)");
+let foldTouched = false;
+
+/** Publish the real heights of the bottom-anchored boxes, so the stack holds. */
+function measureStack() {
+  const bar = document.querySelector(".statusbar");
+  const set = $("setup");
+  if (bar) document.documentElement.style.setProperty("--barH", `${Math.round(bar.offsetHeight)}px`);
+  if (set) document.documentElement.style.setProperty("--setupH", `${Math.round(set.offsetHeight)}px`);
+}
+
+function setFold(open) {
+  $("setup").dataset.open = open ? "true" : "false";
+  $("setupFold").setAttribute("aria-expanded", open ? "true" : "false");
+  $("setupFold").querySelector("i").textContent = open ? "\u2212" : "+";
+  measureStack();
+}
+setFold(!narrow.matches);
+$("setupFold").addEventListener("click", () => {
+  foldTouched = true;
+  setFold($("setup").dataset.open !== "true");
+});
+narrow.addEventListener("change", (e) => { if (!foldTouched) setFold(!e.matches); });
+
+const PITCH_KEY = "open-fly-pitch-dismissed";
+let pitchDone = false;
+try { pitchDone = localStorage.getItem(PITCH_KEY) === "1"; } catch (e) { /* private tab */ }
+
+function showPitch(wiped, seat, start, last) {
+  if (pitchDone) return;
+  $("pitchTitle").textContent = wiped ? "The fly lost the country" : "The fly is bad at this";
+  $("pitchLine").textContent = wiped
+    ? `${seat.name} was wiped out on turn ${last.turn + 1}. You would probably do better.`
+    : `${seat.name} finished on ${last.share.toFixed(2)}% of the world, from ${start.toFixed(2)}%. You would probably do better.`;
+  // On a phone the folded menu and this card are stacked with 56px between
+  // them; an unfolded menu would sit under it. The ask is the more useful of
+  // the two at the moment a run ends, so it takes the space.
+  if (narrow.matches) setFold(false);
+  $("pitch").dataset.show = "true";
+}
+
+$("pitchHide").addEventListener("click", () => {
+  pitchDone = true;
+  $("pitch").dataset.show = "false";
+  try { localStorage.setItem(PITCH_KEY, "1"); } catch (e) { /* private tab: ask again next time */ }
+});
+
 const spark = $("spark");
 function drawSpark() {
   const r = spark.getBoundingClientRect(), dpr = Math.min(devicePixelRatio, 2);
@@ -643,6 +782,7 @@ async function playForever() {
       : { title: "GAME OVER", line: `${seat.name}: ${start.toFixed(2)}% → ${last.share.toFixed(2)}% of the world`, next: "The next game starts in a few seconds" };
     drawScreen();
     setNow(wiped ? `${seat.name} wiped out on turn ${last.turn + 1}` : `Game ${gameNo} over: ${last.share.toFixed(2)}% of the world`, G.over.next);
+    showPitch(wiped, seat, start, last);
     // Only a country the viewer chose is replayed. In random mode a quick wipe-out used to
     // bring the same seat straight back, so a doomed one (Mexico, 1914) looped forever.
     if (wiped && choice.iso) carry = seat;
@@ -659,6 +799,9 @@ function resize() {
   camera.updateProjectionMatrix();
   if (brainView) brainView.mat.uniforms.uScale.value = (h / 900) * 1.1;
   drawSpark();
+  // The status bar changes height between one and two columns at the
+  // breakpoint, and the boxes stacked above it are placed from that number.
+  measureStack();
 }
 addEventListener("resize", resize);
 resize();
