@@ -18,7 +18,38 @@
   Content-Type: text/javascript; charset=utf-8
 /*.js
   Content-Type: text/javascript; charset=utf-8
-# The gzip parts are fetched as bytes and inflated by the page itself, so they
-# must NOT come back with a Content-Encoding the browser would undo first.
+# ── THE PART FILES' TYPE IS CHOSEN FOR COMPRESSION ──
+#
+# The parts are packed with --no-gzip, which is a correctness flag: a gzip
+# stream cut into pieces has its header in .000 only, and itch.io re-encodes by
+# content, so it inflated that one piece and passed the rest through and the
+# page assembled 58,539,143 bytes of a 91,106,470-byte file. Plain parts have
+# no such asymmetry -- see tools/pack_web.py.
+#
+# The saving was meant to come back as transit compression instead. It does not,
+# unasked: `.part.000` is an extension no host knows, so these are served as
+# application/octet-stream, and Cloudflare compresses by content-type with
+# application/octet-stream not on its list. The same trap was measured in the
+# Open Doctrines repository, where the .wasm came down brotli'd at 3.1 MB and
+# the .data came down at its full 10 MB beside it.
+#
+# So the parts are declared application/wasm, which is on the compressible list.
+# packed.js fetches them as an ArrayBuffer and never reads the type, and nothing
+# hands them to instantiateStreaming, so the declaration costs nothing. The
+# connectome gzips from 86.9 MB to 45.3 MB, which is the difference between
+# 114 MB and 69 MB to reach the first turn.
+#
+# MEASURE IT, do not trust this comment: fetch a part from the deployed site
+# and compare encodedBodySize with decodedBodySize. Cloudflare has its own
+# opinions about compressing very large responses, and these parts are 20 MB.
+/data/connectome.bin.part.*
+  Content-Type: application/wasm
+/agent/OpenDoctrinesAgent.data.part.*
+  Content-Type: application/wasm
+
+# The parts are fetched as bytes and joined by the page itself. A host is free
+# to gzip them in transit -- the browser hands back exactly the bytes that were
+# sent, and the join still reconstructs the file -- but they must never arrive
+# with a Content-Encoding the page would have to undo twice.
 /data/*
   Cache-Control: public, max-age=0, must-revalidate

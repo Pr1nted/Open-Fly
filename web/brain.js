@@ -30,7 +30,16 @@ export class FlyBrain {
     this.n = n;
     this.indptr = new Uint32Array(connectome, off, n + 1); off += (n + 1) * 4;
     this.post = new Uint32Array(connectome, off, nsyn); off += nsyn * 4;
-    this.count = new Int16Array(connectome.slice(off, off + nsyn * 2));
+    // A VIEW, NOT A COPY. slice() here allocated a second 28.8 MB array of the
+    // same 15,091,983 values, on top of the 91 MB buffer that indptr and post
+    // are views on and which is therefore retained anyway -- so the copy cost
+    // a quarter of the brain worker's footprint and bought nothing. That is
+    // the kind of margin a phone tab is killed over.
+    //
+    // The offset is 12 + (n+1)*4 + nsyn*4, so it is always a multiple of four
+    // and always aligned for Int16Array; checked against the real file, the
+    // view reads the same 15,091,983 values the copy did.
+    this.count = new Int16Array(connectome, off, nsyn);
     const P = meta.params;
     this.P = P;
     this.dt = P.dt;
