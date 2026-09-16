@@ -47,6 +47,17 @@
 /agent/OpenDoctrinesAgent.data.part.*
   Content-Type: application/wasm
 
+# The room and the neuron positions, for the same reason and by the same rule.
+# scene.gltf IS JSON -- glTF's non-binary form -- and compresses 77%, but .gltf
+# is not a type Cloudflare knows either, so it came down whole at 1.5 MB on the
+# first deployment. brain.bin is float positions and only gives back 21%, which
+# is still 0.3 MB nobody has to wait for. Three.js's loader and the page read
+# both as bytes and never look at the type.
+/scene.gltf
+  Content-Type: application/json
+/data/brain.bin
+  Content-Type: application/wasm
+
 # The parts are fetched as bytes and joined by the page itself. A host is free
 # to gzip them in transit -- the browser hands back exactly the bytes that were
 # sent, and the join still reconstructs the file -- but they must never arrive
