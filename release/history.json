@@ -1,7 +1,7 @@
 [
  {
   "tag": "v1.2.1a",
-  "date": "2026-09-15",
+  "date": "2026-09-16",
   "run": {
    "open_doctrines": "v1.2.1a",
    "seat": "/data/STDmaps/1914.odmap:SWE",
@@ -15,7 +15,7 @@
    "turns_at_war": 39,
    "orders": 270,
    "dn_spikes_per_turn": 401,
-   "seconds": 41
+   "seconds": 43
   }
  }
 ]
