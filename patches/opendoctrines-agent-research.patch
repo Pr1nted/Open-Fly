@@ -1,0 +1,94 @@
+diff --git a/src/Game.h b/src/Game.h
+index 4342554..156c867 100644
+--- a/src/Game.h
++++ b/src/Game.h
+@@ -409,6 +409,7 @@ public:
+     /** Resolve the turn. False once the seat has played its last turn. */
+     bool agentEndTurn();
+     bool agentOver() const { return m_turnNumber >= m_agentUntilTurn; }
++    void agentResearchPlayer(bool on) { m_agentResearchPlayer = on; }
+     unsigned int agentMapSeed() const { return m_agentMapSeed; }
+     float agentBenchShare() const { return m_benchScoreShare; }
+     /** Constructs trade offers a neighbour could make to one AI country and
+@@ -4858,6 +4859,15 @@ private:
+      */
+     int m_benchPlayUntilTurn = 0;
+     int m_agentUntilTurn = 0;          // see agentBegin
++    // ── A SEAT PLAYED FROM OUTSIDE STILL RESEARCHES ──
++    //
++    // Research is progressed for every country except the player's, because a
++    // player sets theirs in the UI. An agent seat has no UI, so a seat that is
++    // the player -- Open Fly's fly -- never researched at all while every
++    // country around it did, and research is about 40% of an AI country's
++    // spending. The browser agent sets this; runBenchAgent does NOT, so the
++    // benchmark's numbers are unchanged and stay comparable with past runs.
++    bool m_agentResearchPlayer = false;
+     // Set by agentBegin before it loads. A world played from outside is never
+     // drawn, so the load skips what only feeds the screen: the border raster,
+     // the political texture and its shading field, icons and flags. Nothing a
+diff --git a/src/Game_Agent.cpp b/src/Game_Agent.cpp
+index a43aed7..25e99a9 100644
+--- a/src/Game_Agent.cpp
++++ b/src/Game_Agent.cpp
+@@ -292,6 +292,18 @@ std::string Game::agentPositionJson(bool withMap) {
+     j["net"] = p.inc.net;
+     j["war"] = p.wars;
+     j["benchShare"] = m_benchScoreShare;
++    // What this country has finished researching, what it pays for it, and what
++    // it is working on: the numbers the resolver already keeps, so a viewer and
++    // a test can see research happening rather than infer it from income. A
++    // seat that funds research without choosing a focus has nothing active and
++    // finishes nothing, which is easy to mistake for research being broken.
++    const int rcid = m_playerCountryId;
++    j["researched"] = (int)(m_countryResearched.count(rcid) ? m_countryResearched.at(rcid).size() : 0);
++    j["researchShare"] = m_countryResearchAllocation.count(rcid) ? m_countryResearchAllocation.at(rcid) : 0.0f;
++    const auto acIt = m_countryResearchActive.find(rcid);
++    const int active = acIt == m_countryResearchActive.end() ? -1 : acIt->second;
++    j["researching"] = (active >= 0 && active < (int)m_researchNodes.size())
++                           ? m_researchNodes[active].name : std::string();
+     nlohmann::json legal = nlohmann::json::object(), budget = nlohmann::json::object();
+     for (int mod = 0; mod < 4; ++mod) {
+         nlohmann::json list = nlohmann::json::array();
+diff --git a/src/Game_Research.cpp b/src/Game_Research.cpp
+index f093835..4fd4672 100644
+--- a/src/Game_Research.cpp
++++ b/src/Game_Research.cpp
+@@ -152,7 +152,10 @@ void researchProbeNote(const Game& g, int cid, const ResearchNode& node, bool ex
+ }  // namespace
+ 
+ void Game::progressCountryResearch(int countryId) {
+-    if (countryId == m_playerCountryId) return;
++    // The guard lives here as well as at the call site, so a caller that
++    // forgets cannot progress the player's research by accident. An agent seat
++    // is the one player with nobody at a keyboard: see m_agentResearchPlayer.
++    if (countryId == m_playerCountryId && !m_agentResearchPlayer) return;
+     auto raIt = m_countryResearchAllocation.find(countryId);
+     if (raIt == m_countryResearchAllocation.end() || raIt->second <= 0.001f) {
+         // Unfunded. Worth counting only when a node is actually waiting on the
+diff --git a/src/Game_TurnLogic.cpp b/src/Game_TurnLogic.cpp
+index cae4441..56edbaf 100644
+--- a/src/Game_TurnLogic.cpp
++++ b/src/Game_TurnLogic.cpp
+@@ -964,7 +964,7 @@ void Game::processCountryTurn(int countryId) {
+     // then visible as a delta in the learning step — progressing before the
+     // snapshot made every completion invisible (and unrewarded, and uncounted).
+     if (m_ai && countryId != m_playerCountryId) m_ai->takeTurn(countryId);
+-    if (countryId != m_playerCountryId) progressCountryResearch(countryId);
++    if (countryId != m_playerCountryId || m_agentResearchPlayer) progressCountryResearch(countryId);
+     // THE ONLY MOMENT A COUNTRY'S WHOLE TURN IS ON THE TABLE. It has decided,
+     // and nothing it decided has been consumed yet. See m_turnOrderLog.
+     // Where this country's pacification money goes. A reflex, not a decision
+diff --git a/src/web/AgentWeb.cpp b/src/web/AgentWeb.cpp
+index 4a892cf..102d25b 100644
+--- a/src/web/AgentWeb.cpp
++++ b/src/web/AgentWeb.cpp
+@@ -41,6 +41,9 @@ EMSCRIPTEN_KEEPALIVE int od_agent_begin(const char* seat, unsigned int seed, int
+     g_game.reset();
+     g_game = std::make_unique<Game>();
+     if (!g_game->agentUseDataDir("/data/")) return 0;
++    // A browser seat has no research screen; without this it would be the only
++    // country in the world that never researches.
++    g_game->agentResearchPlayer(true);
+     return g_game->agentBegin(seat ? seat : "", seed, turns) ? 1 : 0;
+ }
+ 

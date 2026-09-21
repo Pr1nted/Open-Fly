@@ -69,6 +69,25 @@ The Python version, which plays the native server through a FIFO, is in
 `open_fly/`. The Colab notebook `notebooks/open_fly_colab.ipynb` runs it with no
 setup.
 
+## The fly did not research until 2026-09-21
+
+Open Doctrines progresses research for every country except the player's,
+because a player sets theirs on the research screen. The fly **is** the player
+seat, and it has no screen, so its country never researched at all while every
+country around it did — and research is about 40% of what an AI country spends.
+Every game the fly played before this date was played without it.
+
+`patches/opendoctrines-agent-research.patch` fixes it: the browser build asks
+the game to progress its seat's research, and `od_agent_position` now reports
+`researched`, `researchShare` and `researching` so it can be seen rather than
+inferred. `tools/build_web_agent.sh` applies the patch to a throwaway copy of
+the game and skips it once the game carries it. The benchmark is deliberately
+left alone — `runBenchAgent` does not set the flag — so past benchmark numbers
+stay comparable.
+
+The fly still has to *choose* to fund research and to pick a focus, exactly as
+the policy does. Nothing about that is done for it.
+
 ## Credits
 
 - Brain model: Shiu et al., "A Drosophila computational brain model reveals
