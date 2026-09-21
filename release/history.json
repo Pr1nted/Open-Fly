@@ -17,5 +17,24 @@
    "dn_spikes_per_turn": 401,
    "seconds": 43
   }
+ },
+ {
+  "tag": "v1.2.2a",
+  "date": "2026-09-21",
+  "run": {
+   "open_doctrines": "v1.2.2a",
+   "seat": "/data/STDmaps/1914.odmap:SWE",
+   "country": "Free Communes of Sweden",
+   "seed": 20260801,
+   "turns": 120,
+   "start_share": 1.0498687664041995,
+   "end_share": 0,
+   "wiped_out_turn": 54,
+   "turns_played": 54,
+   "turns_at_war": 45,
+   "orders": 374,
+   "dn_spikes_per_turn": 303,
+   "seconds": 42
+  }
  }
 ]
