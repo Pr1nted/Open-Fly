@@ -35,10 +35,16 @@ const t0 = Date.now();
 if (begin(`${map}:${iso}:rung`, seed, turns) !== 1) { console.error(`could not load ${map}:${iso}`); process.exit(1); }
 const enc = new Encoder();
 let start = null, last = null, orders = 0, dnTotal = 0, landless = 0, wipedOutTurn = null, wars = 0;
+// Research, from builds that report it (patches/opendoctrines-agent-research.patch).
+// Before that patch the fly's country never researched at all, so these are
+// here to show that it now can -- and whether the fly chooses to.
+let researchStart = null, researchFunded = 0;
 for (;;) {
   const p = JSON.parse(position(0));
   last = p;
   if (start === null) start = p.share;
+  if (researchStart === null && p.researched !== undefined) researchStart = p.researched;
+  if (p.researchShare > 0) researchFunded++;
   if (p.over) break;
   landless = p.mine === 0 ? landless + 1 : 0;
   if (landless >= 2) { wipedOutTurn = p.turn; break; }
@@ -74,6 +80,10 @@ const result = {
   seat: `${map}:${iso}`, country: last.name, seed, turns,
   start_share: start, end_share: wipedOutTurn === null ? last.share : 0, wiped_out_turn: wipedOutTurn,
   turns_played: played, turns_at_war: wars, orders, dn_spikes_per_turn: Math.round(dnTotal / played),
+  ...(researchStart === null ? {} : {
+    research_nodes_start: researchStart, research_nodes_end: last.researched,
+    turns_funding_research: researchFunded,
+  }),
   seconds: Math.round((Date.now() - t0) / 1000),
 };
 console.log(JSON.stringify(result));
