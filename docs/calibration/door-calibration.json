@@ -1,0 +1,164 @@
+[
+ {
+  "seat": "1914:FRA:rung",
+  "seed": 20260801,
+  "patched": 13.1,
+  "plain": 13.1,
+  "same": true,
+  "err": "",
+  "secs": 18.2
+ },
+ {
+  "seat": "1914:FRA:rung",
+  "seed": 4242,
+  "patched": 18.8,
+  "plain": 18.8,
+  "same": true,
+  "err": "",
+  "secs": 18.7
+ },
+ {
+  "seat": "1914:FRA:rung",
+  "seed": 90210,
+  "patched": 15.1,
+  "plain": 15.1,
+  "same": true,
+  "err": "",
+  "secs": 16.9
+ },
+ {
+  "seat": "1914:SWE:rung",
+  "seed": 20260801,
+  "patched": 2.2,
+  "plain": 2.2,
+  "same": true,
+  "err": "",
+  "secs": 19.8
+ },
+ {
+  "seat": "1914:SWE:rung",
+  "seed": 4242,
+  "patched": 2.1,
+  "plain": 2.1,
+  "same": true,
+  "err": "",
+  "secs": 19.5
+ },
+ {
+  "seat": "1914:SWE:rung",
+  "seed": 90210,
+  "patched": 3.0,
+  "plain": 3.0,
+  "same": true,
+  "err": "",
+  "secs": 16.9
+ },
+ {
+  "seat": "1939:USA:rung",
+  "seed": 20260801,
+  "patched": 20.1,
+  "plain": 20.1,
+  "same": true,
+  "err": "",
+  "secs": 24.6
+ },
+ {
+  "seat": "1939:USA:rung",
+  "seed": 4242,
+  "patched": 19.1,
+  "plain": 19.1,
+  "same": true,
+  "err": "",
+  "secs": 25.2
+ },
+ {
+  "seat": "1939:USA:rung",
+  "seed": 90210,
+  "patched": 20.9,
+  "plain": 20.9,
+  "same": true,
+  "err": "",
+  "secs": 23.0
+ },
+ {
+  "seat": "modern:CHN:rung",
+  "seed": 20260801,
+  "patched": 9.9,
+  "plain": 9.9,
+  "same": true,
+  "err": "",
+  "secs": 37.6
+ },
+ {
+  "seat": "modern:CHN:rung",
+  "seed": 4242,
+  "patched": 9.6,
+  "plain": 9.6,
+  "same": true,
+  "err": "",
+  "secs": 36.7
+ },
+ {
+  "seat": "modern:CHN:rung",
+  "seed": 90210,
+  "patched": 3.4,
+  "plain": 3.4,
+  "same": true,
+  "err": "",
+  "secs": 39.1
+ },
+ {
+  "seat": "1914:FRA:rush",
+  "seed": 20260801,
+  "patched": 8.2,
+  "plain": 8.2,
+  "same": true,
+  "err": "",
+  "secs": 20.8
+ },
+ {
+  "seat": "1914:FRA:rush",
+  "seed": 4242,
+  "patched": 7.0,
+  "plain": 7.0,
+  "same": true,
+  "err": "",
+  "secs": 21.6
+ },
+ {
+  "seat": "1914:FRA:rush",
+  "seed": 90210,
+  "patched": 11.0,
+  "plain": 11.0,
+  "same": true,
+  "err": "",
+  "secs": 16.7
+ },
+ {
+  "seat": "1939:NOR:hood",
+  "seed": 20260801,
+  "patched": 0.3,
+  "plain": 0.3,
+  "same": true,
+  "err": "",
+  "secs": 23.0
+ },
+ {
+  "seat": "1939:NOR:hood",
+  "seed": 4242,
+  "patched": 0.3,
+  "plain": 0.3,
+  "same": true,
+  "err": "",
+  "secs": 21.7
+ },
+ {
+  "seat": "1939:NOR:hood",
+  "seed": 90210,
+  "patched": 0.3,
+  "plain": 0.3,
+  "same": true,
+  "err": "",
+  "secs": 21.3
+ }
+]

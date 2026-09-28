@@ -54,6 +54,16 @@ how well the fly plays is made from it.
 ## Before any claim about skill (not yet run)
 
 - Door calibration first: the door must reproduce known scores.
+  **Done, 2026-09-28: 18 of 18 identical** (`tools/calibrate_door.py`,
+  `docs/calibration/door-calibration.json`). The patch edits `Game_AITrain.cpp`, which
+  is also where the `[BENCH]` score is computed, so the two cannot be assumed
+  independent. The patched binary and an unpatched build of the same commit
+  (`05881e0`) were run through `od_bench.py`'s own `--eval-ai` invocation on
+  all six seats and the three bench seeds, and scored the same on every one, to
+  the precision the line prints. What this establishes is that the patch is
+  inert for a normal evaluation at difficulty 3, which is the only difficulty
+  the matrix uses; it says nothing about the patch's `aiDifficulty = 3`
+  override at any other difficulty, and nothing is run at one.
 - Conditions: fly, shuffled connectome (postsynaptic column permuted, seed
   `20240923`), input-blind brain (constant 50 Hz on every channel),
   random-legal, always-hold. Trained model reported in its own column, as a
