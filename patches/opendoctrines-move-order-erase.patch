@@ -1,0 +1,57 @@
+processArmyMovement erases a pending move order BY INDEX after resolveAssault,
+and resolveAssault can capture the province -- at which point captureProvince
+drops every queued order out of that ground, including other countries' orders
+anywhere in the same vector. The index erase then removes whichever order slid
+into slot i, leaves the executed one queued to march again, and when the
+dropped order sat at the tail, erases one past the end.
+
+libc++ memmoves a negative count there and the run dies with SIGBUS; libstdc++
+silently pops the last order instead, so no Linux run and no CI job has ever
+shown it, and their numbers quietly include the mis-erase.
+
+WHY THIS PATCH EXISTS AT ALL. It is in the Open Doctrines main tree, applied
+2026-09-13, but NOT in 05881e0 -- the commit this project pins. The binary
+built that day picked it up from an uncommitted working tree, so the pinned
+build and the binary in use were never the same thing, and 05881e0 built as
+the preregistration described it crashes at turn 104 once the control cohort
+is declared and the opponents actually fight. Carried here so the build is
+reproducible from its own description.
+
+--- a/src/Game_TurnLogic.cpp	2026-09-28 19:17:10.624644428 +0200
++++ b/src/Game_TurnLogic.cpp	2026-09-28 23:14:18.053847181 +0200
+@@ -4210,14 +4210,31 @@
+         // landed. See resolveAssault: it fights the WHOLE garrison rather than
+         // the first stack it finds, and places the survivors itself.
+         ForceComposition survivors;
++        // ── THE ORDER LEAVES THE QUEUE BEFORE THE ASSAULT, NOT AFTER IT ──
++        //
++        // resolveAssault can capture the province, and captureProvince drops
++        // every queued move order out of the captured ground -- other countries'
++        // orders, anywhere in this vector. Erasing by index afterwards removed
++        // whichever order had slid into slot i, left this one queued to march
++        // again next turn, and when the dropped order sat at the tail, erased
++        // one past the end. libc++ memmoves a negative count there and the turn
++        // dies in processArmyMovement; libstdc++ silently pops the last order
++        // instead, which is why no Linux run or CI job ever showed it.
++        const int fromPid = mo.fromProvince, toPid = mo.toProvince;
++        m_pendingMoveOrders.erase(m_pendingMoveOrders.begin() + i);
++        const size_t queued = m_pendingMoveOrders.size();
++        const size_t aheadDropped = (size_t)std::count_if(
++            m_pendingMoveOrders.begin(), m_pendingMoveOrders.begin() + i,
++            [toPid](const PendingMoveOrder& o) { return o.fromProvince == toPid; });
+         // The source province is the fallback: men who never got into the
+         // fight march back to where they came from. See resolveAssault.
+-        const bool took = resolveAssault(countryId, mo.toProvince, moving, survivors,
+-                                         mo.fromProvince);
++        const bool took = resolveAssault(countryId, toPid, moving, survivors, fromPid);
++        // Orders before i that left with the province shift the unvisited ones
++        // down by that many; step back so none of them is skipped.
++        if (m_pendingMoveOrders.size() < queued) i -= aheadDropped;
+         if (m_config.aiDebug && took)
+             printf("[BATTLE] cid=%d took prov %d from prov %d with %lld of %lld\n",
+-                   countryId, mo.toProvince, mo.fromProvince, survivors.total(), toMove);
+-        m_pendingMoveOrders.erase(m_pendingMoveOrders.begin() + i);
++                   countryId, toPid, fromPid, survivors.total(), toMove);
+     }
+ }
+ 

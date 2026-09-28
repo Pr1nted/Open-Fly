@@ -6,7 +6,7 @@
   "plain": 13.1,
   "same": true,
   "err": "",
-  "secs": 18.2
+  "secs": 17.9
  },
  {
   "seat": "1914:FRA:rung",
@@ -15,7 +15,7 @@
   "plain": 18.8,
   "same": true,
   "err": "",
-  "secs": 18.4
+  "secs": 18.3
  },
  {
   "seat": "1914:FRA:rung",
@@ -24,7 +24,7 @@
   "plain": 15.1,
   "same": true,
   "err": "",
-  "secs": 17.2
+  "secs": 17.1
  },
  {
   "seat": "1914:SWE:rung",
@@ -33,7 +33,7 @@
   "plain": 2.2,
   "same": true,
   "err": "",
-  "secs": 20.0
+  "secs": 19.9
  },
  {
   "seat": "1914:SWE:rung",
@@ -42,7 +42,7 @@
   "plain": 2.1,
   "same": true,
   "err": "",
-  "secs": 19.3
+  "secs": 19.2
  },
  {
   "seat": "1914:SWE:rung",
@@ -60,7 +60,7 @@
   "plain": 20.1,
   "same": true,
   "err": "",
-  "secs": 24.7
+  "secs": 24.3
  },
  {
   "seat": "1939:USA:rung",
@@ -69,7 +69,7 @@
   "plain": 19.1,
   "same": true,
   "err": "",
-  "secs": 24.6
+  "secs": 24.8
  },
  {
   "seat": "1939:USA:rung",
@@ -78,7 +78,7 @@
   "plain": 20.9,
   "same": true,
   "err": "",
-  "secs": 22.4
+  "secs": 22.7
  },
  {
   "seat": "modern:CHN:rung",
@@ -87,7 +87,7 @@
   "plain": 9.9,
   "same": true,
   "err": "",
-  "secs": 37.2
+  "secs": 37.4
  },
  {
   "seat": "modern:CHN:rung",
@@ -96,7 +96,7 @@
   "plain": 9.6,
   "same": true,
   "err": "",
-  "secs": 36.4
+  "secs": 36.1
  },
  {
   "seat": "modern:CHN:rung",
@@ -105,7 +105,7 @@
   "plain": 3.4,
   "same": true,
   "err": "",
-  "secs": 38.1
+  "secs": 39.1
  },
  {
   "seat": "1914:FRA:rush",
@@ -114,7 +114,7 @@
   "plain": 8.2,
   "same": true,
   "err": "",
-  "secs": 20.6
+  "secs": 21.2
  },
  {
   "seat": "1914:FRA:rush",
@@ -123,7 +123,7 @@
   "plain": 7.0,
   "same": true,
   "err": "",
-  "secs": 21.0
+  "secs": 21.7
  },
  {
   "seat": "1914:FRA:rush",
@@ -132,7 +132,7 @@
   "plain": 11.0,
   "same": true,
   "err": "",
-  "secs": 16.1
+  "secs": 16.3
  },
  {
   "seat": "1939:NOR:hood",
@@ -141,7 +141,7 @@
   "plain": 0.3,
   "same": true,
   "err": "",
-  "secs": 22.0
+  "secs": 22.8
  },
  {
   "seat": "1939:NOR:hood",
@@ -150,7 +150,7 @@
   "plain": 0.3,
   "same": true,
   "err": "",
-  "secs": 20.8
+  "secs": 21.4
  },
  {
   "seat": "1939:NOR:hood",

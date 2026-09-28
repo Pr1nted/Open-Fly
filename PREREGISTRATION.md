@@ -6,8 +6,18 @@ be reported as such.
 
 ## Build
 
-- Open Doctrines commit `05881e0`, with `patches/opendoctrines-agent-door.patch`
-  and `patches/opendoctrines-bench-cohort.patch`.
+- Open Doctrines commit `05881e0`, with `patches/opendoctrines-agent-door.patch`,
+  `patches/opendoctrines-bench-cohort.patch` and
+  `patches/opendoctrines-move-order-erase.patch`.
+- **The build was not reproducible from this description until 2026-09-28.**
+  The binary in use was built on 2026-09-13 from a working tree carrying a
+  move-order fix that was never in `05881e0`, so "commit `05881e0` plus the
+  door patch" and the binary that played were not the same program. Built as
+  written, `05881e0` dies with SIGBUS at turn 104 once the cohort patch makes
+  the opponents fight: `processArmyMovement` erases a pending order by index
+  after `resolveAssault`, which can capture a province and drop other orders
+  out of the same vector. The fix is carried as the third patch. Nothing was
+  claimed from the old binary, and nothing run under it is reported.
 - **The cohort patch was added 2026-09-28, before any condition was run**, and
   it changes what the seats are rather than how anything is scored. The door
   never declared its control cohort, so `isRandomCountry()` was false for every
