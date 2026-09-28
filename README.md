@@ -7,8 +7,9 @@
 The brain is the leaky integrate-and-fire model of the whole adult *Drosophila*
 brain from Shiu et al. (2024), built on the FlyWire connectome: 138,639 neurons
 and about 15 million synaptic connections. It runs in the page, in a worker, and
-matches the original Brian2 model spike for spike on a scripted input. The game is Open Doctrines'
-own engine compiled to WebAssembly and driven through its agent session. It uses
+matches the original Brian2 model spike for spike on a scripted input. The game
+is Open Doctrines' own engine compiled to WebAssembly and driven through its
+agent session. It uses
 the same menu of actions and the same per-turn budget as the game's trained AI.
 
 Each turn:
