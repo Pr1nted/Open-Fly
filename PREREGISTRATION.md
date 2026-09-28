@@ -6,7 +6,21 @@ be reported as such.
 
 ## Build
 
-- Open Doctrines commit `05881e0`, with `patches/opendoctrines-agent-door.patch`:
+- Open Doctrines commit `05881e0`, with `patches/opendoctrines-agent-door.patch`
+  and `patches/opendoctrines-bench-cohort.patch`.
+- **The cohort patch was added 2026-09-28, before any condition was run**, and
+  it changes what the seats are rather than how anything is scored. The door
+  never declared its control cohort, so `isRandomCountry()` was false for every
+  country and AISystem's gate on it meant nothing rushed: `:rush` and `:hood`
+  played ordinary worlds while the log said otherwise. The controls caught it —
+  `1914:FRA:rung` and `1914:FRA:rush` scored identically on 8 of 8 seeds under
+  two different players. It also means the scripted rung was not in force on
+  the other four seats, so all six seats change under this patch and no run
+  made before it is comparable; the 96 control runs taken before it were
+  discarded (`docs/calibration/matrix-precohort-INVALID.jsonl`) rather than
+  reused. Door calibration was re-run against the rebuilt binary: 18 of 18
+  identical, so the patch still does not touch scoring.
+- The door patch proper:
   the agent door gets the trained model's per-turn action budget (economy, war,
   navy 8; politics 3; a module ends when it picks action 0) and difficulty 3,
   as `tools/od_bench.py` uses.

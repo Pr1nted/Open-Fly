@@ -1,0 +1,189 @@
+The agent door never declared its control cohort, so ":rush" and ":hood" seats
+played an ordinary world while reporting that they were not.
+
+m_randomCids is populated only by setRandomCountries, whose sole caller was
+runAIEvaluation -- and AISystem gates BOTH the exploit variant and the scripted
+rung on isRandomCountry(), which reads it:
+
+    exploitHere = s_exploitVariant >= 0 && isRandomCountry(cid) && ...
+
+Through the door the set was empty, every country failed that test, and nobody
+ever rushed. The "[BENCH] ... ATTACKING without pause" line is printed from the
+requested world string before any of this, so the log confirmed the request and
+not the outcome. Measured before the fix: 1914:FRA:rung and 1914:FRA:rush
+scored identically on 8 of 8 seeds under two different players, while
+--eval-ai separates them 13.1 to 8.2. After it, at 120 turns and always-hold:
+rung 8.6, rush 2.4, hood 0.4, with 1 of 3 bordering neighbours rushing.
+
+The cohort logic is EXTRACTED rather than copied. A second copy of this rule
+would drift silently, and the symptom of drift is a seat that scores plausibly
+against the wrong opponent -- which is how this went unnoticed in the first
+place.
+
+--- a/src/Game_AITrain.cpp	2026-09-28 23:04:18.303934076 +0200
++++ b/src/Game_AITrain.cpp	2026-09-28 21:00:23.486206719 +0200
+@@ -1183,51 +1183,8 @@
+             // that says whether the script is a teacher worth cloning on a
+             // given seat, or a student the model has already passed.
+             static const bool seatScripted = std::getenv("OD_SEAT_SCRIPTED") != nullptr;
+-            for (int owner : m_provinceCountryLookup)
+-                if (owner > 0 && owner < REBEL_CID_MIN && (owner != seatCid || seatScripted))
+-                    randomCids.insert(owner);
++            buildBenchCohort(seatCid, seatScripted, randomCids);
+ 
+-            // ── A RUSHING NEIGHBOURHOOD, NOT A RUSHING WORLD ──
+-            //
+-            // Everyone who shares a land border with the seat attacks without
+-            // pause; everyone else plays the ordinary rung. The whole-world
+-            // version of this seat scored 13 out of 100 for every model tried,
+-            // which is not a hard seat, it is an unrankable one. See
+-            // AISystem::s_exploitCids.
+-            AISystem::s_exploitCids.clear();
+-            if (m_benchRushNeighbours != 0) {
+-                std::unordered_set<int> nbrCids;
+-                for (const auto& [pid, nbrs] : m_provinceNeighbors) {
+-                    if (pid < 0 || pid >= (int)m_provinceCountryLookup.size()) continue;
+-                    if (m_provinceCountryLookup[pid] != seatCid) continue;
+-                    for (int nb : nbrs) {
+-                        if (nb < 0 || nb >= (int)m_provinceCountryLookup.size()) continue;
+-                        const int owner = m_provinceCountryLookup[nb];
+-                        if (owner > 0 && owner < REBEL_CID_MIN && owner != seatCid)
+-                            nbrCids.insert(owner);
+-                    }
+-                }
+-                // HOW MANY of them, largest first. Every neighbour at once is
+-                // not a softer seat than a rushing world, it is a harder one --
+-                // measured, and the reason is that the seat is then the only
+-                // non-rusher any of them can see, so all of them converge on
+-                // it. In a world-wide rush the aggressors are busy with each
+-                // other. One aggressive neighbour is the seat that was wanted.
+-                std::vector<std::pair<int, int>> ranked;   // (provinces, cid)
+-                for (int nc : nbrCids) {
+-                    int n = 0;
+-                    for (int owner : m_provinceCountryLookup) if (owner == nc) ++n;
+-                    ranked.push_back({n, nc});
+-                }
+-                std::sort(ranked.rbegin(), ranked.rend());
+-                const size_t want = m_benchRushNeighbours < 0
+-                                  ? ranked.size()
+-                                  : (size_t)m_benchRushNeighbours;
+-                for (size_t k = 0; k < ranked.size() && k < want; ++k)
+-                    AISystem::s_exploitCids.insert(ranked[k].second);
+-                printf("[BENCH] rushing neighbours: %zu of %zu that border the seat\n",
+-                       AISystem::s_exploitCids.size(), nbrCids.size());
+-            }
+             r.trainedCount = 1;
+             r.randomCount = (int)randomCids.size();
+             for (int owner : m_provinceCountryLookup) {
+@@ -2591,6 +2548,26 @@
+                                       ? m_dataDir + m_aiModelPath
+                                       : m_evalModelOverride);
+ 
++    // ── DECLARE THE COHORT, WHICH THIS DOOR NEVER DID ──
++    //
++    // Without it m_randomCids is empty, isRandomCountry() is false for every
++    // country, and AISystem gates both the exploit variant and the scripted
++    // rung on exactly that test -- so a ":rush" or ":hood" seat played an
++    // ordinary world while the [BENCH] line, printed from the requested string
++    // before any of this, said it was attacking without pause. Measured: the
++    // controls scored 1914:FRA:rung and 1914:FRA:rush identically on 8 of 8
++    // seeds, while --eval-ai separates them 13.1 to 8.2.
++    {
++        std::unordered_set<int> randomCids;
++        buildBenchCohort(cid, std::getenv("OD_SEAT_SCRIPTED") != nullptr, randomCids);
++        m_ai->setRandomCountries(randomCids);
++        printf("[AGENT] control cohort: %d countries, exploit %s, rushing neighbours %d\n",
++               (int)randomCids.size(),
++               AISystem::s_exploitVariant >= 0 ? "ON" : "off",
++               (int)AISystem::s_exploitCids.size());
++        fflush(stdout);
++    }
++
+     static const char* ECON_N[] = {"save","industry","fort","port","specialize",
+         "destroyer","carrier","fund up","fund down","focus bldg","focus army","focus navy"};
+     static const char* POL_N[] = {"hold","enact","pacify up","pacify dn","cancel",
+@@ -2889,3 +2866,69 @@
+     printf("%s (%d/%d rule cases as expected)\n", ok == n ? "PROBE_OK" : "PROBE_FAIL", ok, n);
+     return ok == n;
+ }
++
++// ── THE CONTROL COHORT FOR A BENCH SEAT ──
++//
++// ONE implementation, TWO callers: runAIEvaluation above and agentBegin in
++// Game_Agent.cpp. It was the eval's alone, inline, and the door never did it
++// -- which made the door's rush and hood seats silently identical to rung.
++// m_randomCids is what isRandomCountry() reads, and AISystem gates BOTH the
++// exploit variant and the scripted rung on it:
++//
++//     exploitHere = s_exploitVariant >= 0 && isRandomCountry(cid) && ...
++//
++// So with the cohort unset, every country failed that test, no country ever
++// rushed, and --bench-agent reported "ATTACKING without pause" (printed from
++// the requested string, before any of this) while playing an ordinary world.
++// Two of the six bench seats were not the seats they said they were.
++//
++// Extracted rather than copied for the obvious reason: a second copy of a
++// rule is a rule that drifts, and this one is invisible when it does -- the
++// symptom is a seat that scores plausibly under the wrong opponent.
++void Game::buildBenchCohort(int seatCid, bool seatScripted,
++                            std::unordered_set<int>& randomCids) {
++    for (int owner : m_provinceCountryLookup)
++        if (owner > 0 && owner < REBEL_CID_MIN && (owner != seatCid || seatScripted))
++            randomCids.insert(owner);
++    // ── A RUSHING NEIGHBOURHOOD, NOT A RUSHING WORLD ──
++    //
++    // Everyone who shares a land border with the seat attacks without
++    // pause; everyone else plays the ordinary rung. The whole-world
++    // version of this seat scored 13 out of 100 for every model tried,
++    // which is not a hard seat, it is an unrankable one. See
++    // AISystem::s_exploitCids.
++    AISystem::s_exploitCids.clear();
++    if (m_benchRushNeighbours != 0) {
++        std::unordered_set<int> nbrCids;
++        for (const auto& [pid, nbrs] : m_provinceNeighbors) {
++            if (pid < 0 || pid >= (int)m_provinceCountryLookup.size()) continue;
++            if (m_provinceCountryLookup[pid] != seatCid) continue;
++            for (int nb : nbrs) {
++                if (nb < 0 || nb >= (int)m_provinceCountryLookup.size()) continue;
++                const int owner = m_provinceCountryLookup[nb];
++                if (owner > 0 && owner < REBEL_CID_MIN && owner != seatCid)
++                    nbrCids.insert(owner);
++            }
++        }
++        // HOW MANY of them, largest first. Every neighbour at once is
++        // not a softer seat than a rushing world, it is a harder one --
++        // measured, and the reason is that the seat is then the only
++        // non-rusher any of them can see, so all of them converge on
++        // it. In a world-wide rush the aggressors are busy with each
++        // other. One aggressive neighbour is the seat that was wanted.
++        std::vector<std::pair<int, int>> ranked;   // (provinces, cid)
++        for (int nc : nbrCids) {
++            int n = 0;
++            for (int owner : m_provinceCountryLookup) if (owner == nc) ++n;
++            ranked.push_back({n, nc});
++        }
++        std::sort(ranked.rbegin(), ranked.rend());
++        const size_t want = m_benchRushNeighbours < 0
++                          ? ranked.size()
++                          : (size_t)m_benchRushNeighbours;
++        for (size_t k = 0; k < ranked.size() && k < want; ++k)
++            AISystem::s_exploitCids.insert(ranked[k].second);
++        printf("[BENCH] rushing neighbours: %zu of %zu that border the seat\n",
++               AISystem::s_exploitCids.size(), nbrCids.size());
++    }
++}
+--- a/src/Game.h	2026-09-28 23:04:18.286945953 +0200
++++ b/src/Game.h	2026-09-28 21:00:24.137489792 +0200
+@@ -375,6 +375,12 @@
+      */
+     bool runBenchAgent(const std::string& seatSpec, const std::string& pipePath,
+                        unsigned int seed, int untilTurn);
++
++    // The bench seat's control cohort: every country but the seat, plus the
++    // rushing neighbourhood when the seat asks for one. Shared by the eval and
++    // the agent door, so the two cannot disagree about who the opponents are.
++    void buildBenchCohort(int seatCid, bool seatScripted,
++                          std::unordered_set<int>& randomCids);
+     /** Constructs trade offers a neighbour could make to one AI country and
+      *  asks decideDiplomacy directly: a gift, a robbery, a fair sale, a small
+      *  loss. Verifies the trade RULES (journal 35f), which no eval exercises
