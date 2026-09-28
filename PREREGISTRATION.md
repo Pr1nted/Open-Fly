@@ -58,11 +58,34 @@ how well the fly plays is made from it.
   `20240923`), input-blind brain (constant 50 Hz on every channel),
   random-legal, always-hold. Trained model reported in its own column, as a
   different setup (opening book, own seeding).
-- Seats: the six of `tools/od_bench.py`. Seeds: the three bench seeds plus
-  five fresh ones named before running.
+- Seats: the six of `tools/od_bench.py`. Seeds: the three bench seeds
+  (`20260801`, `4242`, `90210`) plus the five below.
+- The five fresh seeds, fixed 2026-09-28, before any condition was run:
+
+      1408520941  2671880660  4095702708  3542270611  1245491110
+
+  Derived rather than chosen, so that nobody -- including us -- can claim they
+  were picked to suit an outcome, and so anyone can regenerate them:
+
+      python3 -c "import random; r=random.Random('open-fly shuffled control'); \
+                  print([r.getrandbits(32) for _ in range(5)])"
+
+  None collides with a bench seed. All are inside the range `--seed` and
+  `OD_WORLD_SEED` accept, which is `strtoul` into `unsigned int`; note that 0
+  would have meant "unset" to `OD_WORLD_SEED` and none of these is 0.
 - "Different" means a paired difference of at least 25 points, a 95% bootstrap
   interval over seeds excluding 0, and the same sign on at least 3 of the 4
   graded seats. Bistable seats are reported as survival counts only.
 - "The fly played better than random" needs the real brain to beat random,
   always-hold, input-blind and shuffled. If shuffled matches it, the claim is
   that the interface played.
+- **The shuffled brain is not activity-matched, and this was measured before
+  the runs.** On one 200 ms window under the same input, the real wiring fired
+  3,952 spikes and the shuffled one 2,260. Permuting the postsynaptic column
+  destroys the recurrence that sustains firing, so the control differs in total
+  drive as well as in who talks to whom. A difference in play between them is
+  therefore not by itself evidence that the specific wiring computed anything:
+  it is consistent with the real brain simply being louder. Total descending
+  spikes are reported per condition alongside the scores so a reader can see
+  which explanation the numbers support, and the input-blind condition is what
+  separates drive from structure.
